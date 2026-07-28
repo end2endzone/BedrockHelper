@@ -11,7 +11,7 @@ func UninstallAddon(addonPath, serverDir string) ([]InstalledPack, error) {
 // from the Minecraft Bedrock server installed at serverDir.
 // This function is useful when the original add-on file is no longer available or has been deleted.
 func UninstallPackByUUID(uuid, serverDir string) (InstalledPack, error) {
-	if ok, err := IsServerDirectory(serverDir); !ok {
+	if ok, err := IsValidServerDirectory(serverDir); !ok {
 		return InstalledPack{}, err
 	}
 

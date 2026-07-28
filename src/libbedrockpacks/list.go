@@ -4,7 +4,7 @@ package libbedrockpacks
 // For each registered UUID, it attempts to resolve the name of the pack by scanning the corresponding behavior_packs/ or
 // resource_packs/ directories for a matching manifest.json.
 func ListInstalledPacks(serverDir string) ([]RegisteredPack, error) {
-	if ok, err := IsServerDirectory(serverDir); !ok {
+	if ok, err := IsValidServerDirectory(serverDir); !ok {
 		return nil, err
 	}
 

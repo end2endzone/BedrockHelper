@@ -7,7 +7,7 @@ import (
 // ResolvePackByUUID searches serverDir (recursively) for an add-on file containing a pack whose manifest UUID matches the given UUID.
 // It returns the path of the first matching add-on file found.
 func ResolvePackByUUID(uuid string, serverDir string) (string, error) {
-	ok, err := IsServerDirectory(serverDir)
+	ok, err := IsValidServerDirectory(serverDir)
 	if !ok || err != nil {
 		return "", err
 	}
