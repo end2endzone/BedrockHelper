@@ -1,0 +1,11 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "Foobar BP",
+    "uuid": "2bda6085-9d71-4d8a-9b9f-74e07b30459c",
+    "version": [1, 0, 0]
+  },
+  "modules": [
+    {"type": "data", "uuid": "44444444-4444-4444-4444-444444444444", "version": [1,0,0]}
+  ]
+}
