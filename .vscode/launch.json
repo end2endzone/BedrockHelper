@@ -25,6 +25,17 @@
                 "./myserverinstalldir"
             ]
         },
-
+        {
+            "name": "find-addons",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            //"program": "src/cmd/bedrock_helper/main.go",
+            "program": "${fileDirname}",
+            //"cwd": "${workspaceFolder}/src/libbedrockpacks/testdata/find-addons",
+            "args": [
+                "--find-addons"
+            ]
+        },
     ]
 }
