@@ -1,14 +1,13 @@
-// Command bedrock_helper is a command line tool for installing, uninstalling
-// and inspecting Minecraft Bedrock Edition add-on packs (.mcaddon /
-// .mcpack) on a Minecraft Bedrock Dedicated Server.
 package main
 
 import (
-	"errors"
 	"flag"
 	"fmt"
 	"os"
-	"runtime"
+	"path/filepath"
+	"text/tabwriter"
+
+	lib "bedrock_helper/libbedrockpacks"
 )
 
 const usageText = `bedrock_helper - install and manage Minecraft Bedrock add-on packs.
@@ -24,8 +23,8 @@ Usage:
   bedrock_helper --help
 
 Flags:
-  --install <path>          Install the .mcaddon/.mcpack/.zip add-on at <path>.
-  --uninstall <path|uuid>   Uninstall the add-on at <path>, or by pack UUID
+  --install <path>           Install the .mcaddon/.mcpack/.zip add-on at <path>.
+  --uninstall <path|uuid>    Uninstall the add-on at <path>, or by pack UUID
                              if the original add-on file is unavailable.
   --find-addons              Search the current directory (recursively) for
                              files that look like add-on packs and list them.
@@ -33,11 +32,11 @@ Flags:
                              the target server, resolving each UUID to a name.
   --resolve-pack <uuid>      Search the target server for an add-on file that
                              contains a pack matching <uuid>.
-  --install-all               Scan the target server directory for add-on
+  --install-all              Scan the target server directory for add-on
                              files and install every one that is found.
-  --uninstall-all             Scan the target server directory for add-on
+  --uninstall-all            Scan the target server directory for add-on
                              files and uninstall every one that is found.
-  --server-location <dir>   Target Minecraft Bedrock server directory.
+  --server-location <dir>    Target Minecraft Bedrock server directory.
                              Optional; defaults to the current directory.
   --help                     Show this usage message.
 
@@ -148,51 +147,143 @@ func run(args []string) int {
 	return 0
 }
 
-// ErrNotImplemented serves as our foundational sentinel error
-var ErrNotImplemented = errors.New("not implemented")
+// cmdInstall installs the .mcaddon/.mcpack/.zip add-on at <serverLocation>.
+func cmdInstall(addonPath string, serverLocation string) error {
+	installedPacks, err := lib.InstallAddon(addonPath, serverLocation)
+	if err != nil {
+		return err
+	}
+	for _, p := range installedPacks {
+		fmt.Printf("Installed %s (%s) [%s] uuid=%s -> %s\n", p.Name, p.Kind, p.Version, p.UUID, p.Directory)
+	}
+	return nil
+}
 
-// NotImplementedErr dynamically grabs the name of whichever function invokes it
-func NotImplementedErr() error {
-	// Get program counters of function invocations on the calling goroutine's stack.
-	// Note: using 1 as argument to skip 'this function' and look at its immediately previous caller
-	pc, _, _, ok := runtime.Caller(1)
-	if !ok {
-		return ErrNotImplemented
+// cmdUninstall uninstalls the add-on at <serverLocation>, or by pack UUID if the original add-on file is unavailable.
+func cmdUninstall(arg string, serverLocation string) error {
+	// Check if arg is an addon file path or a UUID.
+
+	// Check if arg is a file path and exists
+	info, statErr := os.Stat(arg)
+	if statErr == nil && !info.IsDir() {
+		uninstalledPacks, err := lib.UninstallAddon(arg, serverLocation)
+		if err != nil {
+			return err
+		}
+		for _, pack := range uninstalledPacks {
+			fmt.Printf("Uninstalled %s (%s) uuid=%s\n", pack.Name, pack.Kind, pack.UUID)
+		}
+		return nil
 	}
 
-	// Extracts the fully qualified function name (e.g., "main.Run")
-	fn := runtime.FuncForPC(pc)
-	if fn == nil {
-		return ErrNotImplemented
+	// otherwise treat it as a pack UUID.
+	pack, err := lib.UninstallPackByUUID(arg, serverLocation)
+	if err != nil {
+		return err
 	}
-
-	return fmt.Errorf("function %s: %w", fn.Name(), ErrNotImplemented)
+	fmt.Printf("Uninstalled %s (%s) uuid=%s\n", pack.Name, pack.Kind, pack.UUID)
+	return nil
 }
 
-func cmdInstall(addonPath, serverLocation string) error {
-	return NotImplementedErr()
-}
-
-func cmdUninstall(arg, serverLocation string) error {
-	return NotImplementedErr()
-}
-
+// cmdFindAddons search the current directory recursively for files that look like add-on packs and list them.
 func cmdFindAddons() error {
-	return NotImplementedErr()
+	// Get current working directory
+	cwd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+
+	addons, err := lib.FindAddonsInDir(cwd, true)
+	if err != nil {
+		return err
+	}
+
+	if len(addons) == 0 {
+		fmt.Println("No add-on files found.")
+		return nil
+	}
+
+	// List hist
+	for _, a := range addons {
+		fmt.Println("Found the following addons files:")
+		fmt.Println("  * %v", a)
+	}
+	return nil
 }
 
+// cmdListAddons list the add-on packs currently registered for the target server, resolving each UUID to a name.
 func cmdListAddons(serverLocation string) error {
-	return NotImplementedErr()
+	packs, err := lib.ListInstalledPacks(serverLocation)
+	if err != nil {
+		return err
+	}
+	if len(packs) == 0 {
+		fmt.Println("No add-ons are registered for this server.")
+		return nil
+	}
+
+	w := tabwriter.NewWriter(os.Stdout, 0, 4, 2, ' ', 0)
+	fmt.Fprintln(w, "KIND\tNAME\tVERSION\tUUID")
+	for _, p := range packs {
+		fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", p.Kind, p.Name, p.Version, p.UUID)
+	}
+	return w.Flush()
 }
 
+// cmdResolvePack search the target server for an add-on file that contains a pack matching <uuid>.
 func cmdResolvePack(uuid, serverLocation string) error {
-	return NotImplementedErr()
+	path, err := lib.ResolvePackByUUID(uuid, serverLocation)
+	if err != nil {
+		return err
+	}
+
+	// print only the path in the output so that it can be parsed by scripts
+	fmt.Println(path)
+
+	return nil
 }
 
+// cmdInstallAll scan the target server directory for add-on files and install every one that is found.
 func cmdInstallAll(serverLocation string) error {
-	return NotImplementedErr()
+	addons, err := lib.FindAddonsInDir(serverLocation, true)
+	if err != nil {
+		return err
+	}
+	if len(addons) == 0 {
+		fmt.Println("No add-on files found on the server.")
+		return nil
+	}
+
+	// Process each identified addon as if they were specified individually in the command line
+	for _, addonPath := range addons {
+		err = cmdInstall(addonPath, serverLocation)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error installing %s: %v\n", filepath.Base(addonPath), err)
+			return err
+		}
+	}
+
+	return nil
 }
 
 func cmdUninstallAll(serverLocation string) error {
-	return NotImplementedErr()
+	addons, err := lib.FindAddonsInDir(serverLocation, true)
+	if err != nil {
+		return err
+	}
+	if len(addons) == 0 {
+		fmt.Println("No add-on files found on the server.")
+		return nil
+	}
+
+	// Process each identified addon as if they were specified individually in the command line
+	for _, addonPath := range addons {
+		err = cmdUninstall(addonPath, serverLocation)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error uninstalling %s: %v\n", filepath.Base(addonPath), err)
+			return err
+		}
+	}
+
+	return nil
 }
