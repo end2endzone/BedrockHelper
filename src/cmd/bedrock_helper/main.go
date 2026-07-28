@@ -206,7 +206,7 @@ func cmdFindAddons() error {
 	// List hist
 	for _, a := range addons {
 		fmt.Println("Found the following addons files:")
-		fmt.Println("  * %v", a)
+		fmt.Printf("  * %v", a)
 	}
 	return nil
 }
