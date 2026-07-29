@@ -31,9 +31,9 @@ func serverFixturePath(t *testing.T, name string) string {
 	return filepath.Join(testdataDir(t), "servers", name)
 }
 
-// copyServerFixture copies a fixture server directory into a fresh temporary directory
-// so tests that modifies server state (install/uninstall) never affect the testdata files under CM.
-// Returns the path to the copy.
+// copyServerFixture copies the given testdata server directory into a temporary directory.
+// This is required to prevent calling function that would modify the directory. It makes sure we never affect the testdata files under CM.
+// Returns the path to the temporary copy. The caller is reponsible to delete the returned temporary directory.
 func copyServerFixture(t *testing.T, name string) string {
 	t.Helper()
 	src := serverFixturePath(t, name)

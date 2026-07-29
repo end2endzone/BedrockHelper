@@ -78,3 +78,44 @@ type RegisteredPack struct {
 	Kind    PackKind
 	Version Version
 }
+
+// Header mirrors the "header" object of a Minecraft Bedrock manifest.json.
+type Header struct {
+	Name             string  `json:"name"`
+	Description      string  `json:"description,omitempty"`
+	UUID             string  `json:"uuid"`
+	Version          Version `json:"version"`
+	MinEngineVersion Version `json:"min_engine_version,omitempty"`
+}
+
+// Module mirrors an entry of the "modules" array of a manifest.json.
+type Module struct {
+	Type        string  `json:"type"`
+	UUID        string  `json:"uuid,omitempty"`
+	Version     Version `json:"version"`
+	Description string  `json:"description,omitempty"`
+}
+
+// Dependency mirrors an entry of the "dependencies" array of a manifest.json.
+type Dependency struct {
+	UUID       string  `json:"uuid,omitempty"`
+	ModuleName string  `json:"module_name,omitempty"`
+	Version    Version `json:"version,omitempty"`
+}
+
+// Metadata mirrors the optional "metadata" object of a manifest.json.
+type Metadata struct {
+	Authors []string `json:"authors,omitempty"`
+	License string   `json:"license,omitempty"`
+	URL     string   `json:"url,omitempty"`
+}
+
+// AddonManifest mirrors the structure of a Minecraft Bedrock pack manifest.json file.
+type AddonManifest struct {
+	FormatVersion int          `json:"format_version"`
+	Header        Header       `json:"header"`
+	Modules       []Module     `json:"modules,omitempty"`
+	Dependencies  []Dependency `json:"dependencies,omitempty"`
+	Capabilities  []string     `json:"capabilities,omitempty"`
+	Metadata      *Metadata    `json:"metadata,omitempty"`
+}
