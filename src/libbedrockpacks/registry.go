@@ -18,12 +18,19 @@ type registryEntry struct {
 // A registry file contains a list of registryEntry.
 // If the file does not exist, an empty (not nil-error) list is returned.
 func readRegistry(worldDir string, kind PackKind) ([]registryEntry, error) {
-	registryFileName, err := kind.RegistryFileName()
+	// Build registry file path from worldDir and kind
+	path, err := getRegistryFilePathFromWorldDirAndKind(worldDir, kind)
 	if err != nil {
 		return nil, err
 	}
-	path := filepath.Join(worldDir, registryFileName)
+	entries, err := LoadRegistryFile(path)
+	return entries, err
+}
 
+// LoadRegistryFile reads the world registry file.
+// A registry file contains a list of registryEntry.
+// If the file does not exist, an empty (not nil-error) list is returned.
+func LoadRegistryFile(path string) ([]registryEntry, error) {
 	// Read the registry file
 	data, err := os.ReadFile(path)
 	if os.IsNotExist(err) {
@@ -49,17 +56,21 @@ func readRegistry(worldDir string, kind PackKind) ([]registryEntry, error) {
 
 // writeRegistry writes the world registry file for the given pack kind.
 func writeRegistry(worldDir string, kind PackKind, entries []registryEntry) error {
-	registryFileName, err := kind.RegistryFileName()
+	// Build registry file path from worldDir and kind
+	path, err := getRegistryFilePathFromWorldDirAndKind(worldDir, kind)
 	if err != nil {
 		return err
 	}
-	err = os.MkdirAll(worldDir, 0o755)
-	if err != nil {
-		return fmt.Errorf("failed to create world directory %q: %w", worldDir, err)
-	}
 
+	err = WriteRegistryFile(path, entries)
+	return err
+}
+
+// WriteRegistryFile write the given registry entries the world registry file.
+// A registry file contains a list of registryEntry.
+// If the file does not exist, the file is created an empty (not nil-error) list is returned.
+func WriteRegistryFile(path string, entries []registryEntry) error {
 	// Marshal the entries into an array of bytes
-	path := filepath.Join(worldDir, registryFileName)
 	data, err := json.MarshalIndent(entries, "", "\t")
 	if err != nil {
 		return err
@@ -79,7 +90,21 @@ func writeRegistry(worldDir string, kind PackKind, entries []registryEntry) erro
 // Registering an already-registered UUID updates its version.
 // It does not create duplicate the entry.
 func registerPack(worldDir string, kind PackKind, uuid string, version Version) error {
-	entries, err := readRegistry(worldDir, kind)
+	// Build registry file path from worldDir and kind
+	path, err := getRegistryFilePathFromWorldDirAndKind(worldDir, kind)
+	if err != nil {
+		return err
+	}
+
+	err = RegisterPackInRegistryFile(path, uuid, version)
+	return err
+}
+
+// RegisterPackInRegistryFile adds (or updates) a pack entry in the world registry file for the given pack kind.
+// Registering an already-registered UUID updates its version.
+// It does not create duplicate the entry.
+func RegisterPackInRegistryFile(path string, uuid string, version Version) error {
+	entries, err := LoadRegistryFile(path)
 	if err != nil {
 		return err
 	}
@@ -88,7 +113,7 @@ func registerPack(worldDir string, kind PackKind, uuid string, version Version) 
 	for i, e := range entries {
 		if strings.EqualFold(e.PackID, uuid) {
 			entries[i].Version = version
-			return writeRegistry(worldDir, kind, entries)
+			return WriteRegistryFile(path, entries)
 		}
 	}
 
@@ -99,7 +124,7 @@ func registerPack(worldDir string, kind PackKind, uuid string, version Version) 
 	})
 
 	// Write the new entries to a registry file
-	return writeRegistry(worldDir, kind, entries)
+	return WriteRegistryFile(path, entries)
 }
 
 // unregisterPack removes a pack entry by UUID in the world registry file for the given pack kind.
@@ -135,4 +160,13 @@ func getSafeRegistryFileName(kind PackKind) string {
 		return "registry file"
 	}
 	return name
+}
+
+func getRegistryFilePathFromWorldDirAndKind(worldDir string, kind PackKind) (string, error) {
+	registryFileName, err := kind.RegistryFileName()
+	if err != nil {
+		return "", err
+	}
+	path := filepath.Join(worldDir, registryFileName)
+	return path, nil
 }

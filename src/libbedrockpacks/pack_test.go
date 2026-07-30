@@ -44,7 +44,7 @@ func TestListInstalledPacks_AfterInstallAndUninstall(t *testing.T) {
 	tempServerDir := copyServerFixture(t, "server")
 	defer os.RemoveAll(tempServerDir)
 
-	_, err := InstallAddon(getAddonFixturePath(t, "foobar.mcaddon"), tempServerDir)
+	_, err := InstallAddonInServer(getAddonFixturePath(t, "foobar.mcaddon"), tempServerDir)
 	if err != nil {
 		t.Fatalf("install failed: %v", err)
 	}

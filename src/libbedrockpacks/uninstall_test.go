@@ -9,7 +9,7 @@ func TestUninstallAddon(t *testing.T) {
 	tempServerDir := copyServerFixture(t, "server")
 	defer os.RemoveAll(tempServerDir)
 
-	_, err := InstallAddon(getAddonFixturePath(t, "foobar.mcaddon"), tempServerDir)
+	_, err := InstallAddonInServer(getAddonFixturePath(t, "foobar.mcaddon"), tempServerDir)
 	if err != nil {
 		t.Fatalf("setup install failed: %v", err)
 	}
@@ -90,7 +90,7 @@ func TestInstallThenUninstallByUUID(t *testing.T) {
 	tempServerDir := copyServerFixture(t, "server_no_level_name")
 	defer os.RemoveAll(tempServerDir)
 
-	installed, err := InstallAddon(getAddonFixturePath(t, "behavior_only.mcpack"), tempServerDir)
+	installed, err := InstallAddonInServer(getAddonFixturePath(t, "behavior_only.mcpack"), tempServerDir)
 	if err != nil {
 		t.Fatalf("install failed: %v", err)
 	}

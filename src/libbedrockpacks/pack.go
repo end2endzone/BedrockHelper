@@ -1,12 +1,46 @@
 package libbedrockpacks
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 )
 
-// ListInstalledPacks lists the packs currently registered for a given Minecraft Bedrock server located at at serverDir.
+type Pack struct {
+	Path     string
+	Manifest *AddonManifest
+}
+
+func (p Pack) Kind() (PackKind, error) {
+	kind, err := IdentifyPackKind(p.Manifest)
+	if err != nil {
+		return UnknownPack, err
+	}
+
+	return kind, nil
+}
+
+func (p Pack) Name() string {
+	return p.Manifest.Header.Name
+}
+
+func (p Pack) NameSanitized() string {
+	dirName := sanitizePackDirName(p.Manifest.Header.Name)
+	return dirName
+}
+
+func (p Pack) Description() string {
+	safeKind, err := p.Kind()
+	if err != nil {
+		safeKind = UnknownPack
+	}
+
+	desc := fmt.Sprintf("%s (%s) [%s] uuid=%s -> %s\n", p.Name(), safeKind, p.Manifest.Header.Version, p.Manifest.Header.UUID, p.Path)
+	return desc
+}
+
+// ListInstalledPacks lists the packs currently registered for a given Minecraft Bedrock server located at serverDir.
 // For each registered UUID, it attempts to resolve the name of the pack by scanning the corresponding behavior_packs/ or
 // resource_packs/ directories for a matching manifest.json.
 func ListInstalledPacks(serverDir string) ([]RegisteredPack, error) {
@@ -23,7 +57,7 @@ func ListInstalledPacks(serverDir string) ([]RegisteredPack, error) {
 
 	// For each registry files
 	var results []RegisteredPack
-	for _, kind := range []PackKind{BehaviorPack, ResourcePack} {
+	for _, kind := range AllPackKinds {
 		registryEntries, err := readRegistry(worldDir, kind)
 		if err != nil {
 			return nil, err
@@ -85,4 +119,44 @@ func getPackNamesByUUIDMap(worldDir string, kind PackKind) map[string]string {
 	}
 
 	return uuid2names
+}
+
+func LoadPackFromDirectory(path string) (*Pack, error) {
+	manifestFullPath := filepath.Join(path, "manifest.json")
+
+	// Load its manifest
+	manifest, err := LoadManifestFromFile(manifestFullPath)
+	if err != nil {
+		return nil, err
+	}
+
+	pack := &Pack{
+		Path:     path,
+		Manifest: manifest,
+	}
+	return pack, nil
+}
+
+func LoadPacksFromSubdirectories(path string) ([]*Pack, error) {
+	var packs []*Pack
+
+	// Get all the sub directories
+	entries, err := os.ReadDir(path)
+	if err != nil {
+		return packs, fmt.Errorf("failed to read packs from directory: %w", err)
+	}
+	for _, e := range entries {
+		if e.IsDir() {
+			// Parse pack at this directory
+			packDir := filepath.Join(path, e.Name())
+			pack, err := LoadPackFromDirectory(packDir)
+			if err != nil {
+				return packs, err
+			}
+
+			packs = append(packs, pack)
+		}
+	}
+
+	return packs, nil
 }

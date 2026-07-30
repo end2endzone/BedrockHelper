@@ -16,6 +16,9 @@ const (
 	ResourcePack
 )
 
+// AllPackKinds lists all the different kinds of Pack.
+var AllPackKinds = []PackKind{BehaviorPack, ResourcePack}
+
 // String implements fmt.Stringer for PackKind.
 func (k PackKind) String() string {
 	switch k {

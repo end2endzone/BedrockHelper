@@ -137,7 +137,7 @@ func uninstallPackFromWorld(worldDir, uuid string) (InstalledPack, error) {
 // Returns the pack's install directory and kind.
 func findPackInstallDirByUUID(worldDir, uuid string) (string, PackKind, error) {
 	// For all kinds
-	for _, kind := range []PackKind{BehaviorPack, ResourcePack} {
+	for _, kind := range AllPackKinds {
 		// Build the pack's kind's installation directory
 		subdirName, err := kind.InstallDirName()
 		if err != nil {

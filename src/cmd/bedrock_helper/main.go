@@ -149,7 +149,7 @@ func run(args []string) int {
 
 // cmdInstall installs the .mcaddon/.mcpack/.zip add-on at <serverLocation>.
 func cmdInstall(addonPath string, serverLocation string) error {
-	installedPacks, err := lib.InstallAddon(addonPath, serverLocation)
+	installedPacks, err := lib.InstallAddonInServer(addonPath, serverLocation)
 	if err != nil {
 		return err
 	}

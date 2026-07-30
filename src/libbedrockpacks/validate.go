@@ -123,3 +123,16 @@ func IsValidAddonFile(path string) bool {
 	}
 	return true
 }
+
+// ValidateDirectory asserts that the given path is a valid directory that exists.
+func ValidateDirectory(path string) error {
+	info, err := os.Stat(path)
+	if err != nil {
+		return fmt.Errorf("directory %q is not found: %w", path, err)
+	}
+	if !info.IsDir() {
+		return fmt.Errorf("not a directory: %q", path)
+	}
+
+	return nil
+}
