@@ -15,7 +15,7 @@ func TestResolvePackByUUID(t *testing.T) {
 	defer os.RemoveAll(tempServerDir)
 
 	// Copy an add-on file inside the server directory so that we can resolve from a UUID.
-	src, err := os.ReadFile(addonPath(t, "foobar.mcaddon"))
+	src, err := os.ReadFile(getAddonFixturePath(t, "foobar.mcaddon"))
 	if err != nil {
 		t.Fatalf("failed to read fixture addon: %v", err)
 	}

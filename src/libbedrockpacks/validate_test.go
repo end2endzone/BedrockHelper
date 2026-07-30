@@ -21,7 +21,7 @@ func TestIsValidServerDirectory(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.testName, func(t *testing.T) {
-			path := serverFixturePath(t, tc.fixture)
+			path := getServerFixturePath(t, tc.fixture)
 			ok, err := IsValidServerDirectory(path)
 			if ok != tc.expectValid {
 				t.Fatalf("IsValidServerDirectory(%q) = (%v, %v), expected %v", path, ok, err, tc.expectValid)
@@ -57,7 +57,7 @@ func TestIsValidAddonFile(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			path := addonPath(t, tc.file)
+			path := getAddonFixturePath(t, tc.file)
 			ok, err := IsValidAddonFile(path)
 			if ok != tc.wantValid {
 				t.Fatalf("IsValidAddonFile(%q) = (%v, %v), want valid=%v", path, ok, err, tc.wantValid)
@@ -66,7 +66,7 @@ func TestIsValidAddonFile(t *testing.T) {
 	}
 
 	t.Run("Test wrong extension", func(t *testing.T) {
-		ok, err := IsValidAddonFile(addonPath(t, "foobar.mcaddon") + ".txt")
+		ok, err := IsValidAddonFile(getAddonFixturePath(t, "foobar.mcaddon") + ".txt")
 		if ok || err == nil {
 			t.Fatalf("expected failure for unsupported extension, got ok=%v err=%v", ok, err)
 		}

@@ -44,7 +44,7 @@ func TestListInstalledPacks_AfterInstallAndUninstall(t *testing.T) {
 	tempServerDir := copyServerFixture(t, "server")
 	defer os.RemoveAll(tempServerDir)
 
-	_, err := InstallAddon(addonPath(t, "foobar.mcaddon"), tempServerDir)
+	_, err := InstallAddon(getAddonFixturePath(t, "foobar.mcaddon"), tempServerDir)
 	if err != nil {
 		t.Fatalf("install failed: %v", err)
 	}
@@ -56,7 +56,7 @@ func TestListInstalledPacks_AfterInstallAndUninstall(t *testing.T) {
 		t.Fatalf("expected 2 registered packs after install, got %d", len(packs))
 	}
 
-	_, err = UninstallAddon(addonPath(t, "foobar.mcaddon"), tempServerDir)
+	_, err = UninstallAddon(getAddonFixturePath(t, "foobar.mcaddon"), tempServerDir)
 	if err != nil {
 		t.Fatalf("uninstall failed: %v", err)
 	}
@@ -70,7 +70,7 @@ func TestListInstalledPacks_AfterInstallAndUninstall(t *testing.T) {
 }
 
 func TestListInstalledPacks_InvalidServer(t *testing.T) {
-	invalidServer := serverFixturePath(t, "not_a_server")
+	invalidServer := getServerFixturePath(t, "not_a_server")
 	_, err := ListInstalledPacks(invalidServer)
 	if err == nil {
 		t.Fatal("expected error for invalid server directory, got nil")

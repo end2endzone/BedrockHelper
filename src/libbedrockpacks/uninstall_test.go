@@ -9,12 +9,12 @@ func TestUninstallAddon(t *testing.T) {
 	tempServerDir := copyServerFixture(t, "server")
 	defer os.RemoveAll(tempServerDir)
 
-	_, err := InstallAddon(addonPath(t, "foobar.mcaddon"), tempServerDir)
+	_, err := InstallAddon(getAddonFixturePath(t, "foobar.mcaddon"), tempServerDir)
 	if err != nil {
 		t.Fatalf("setup install failed: %v", err)
 	}
 
-	uninstalledPacks, err := UninstallAddon(addonPath(t, "foobar.mcaddon"), tempServerDir)
+	uninstalledPacks, err := UninstallAddon(getAddonFixturePath(t, "foobar.mcaddon"), tempServerDir)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -44,7 +44,7 @@ func TestUninstallAddon_NotInstalled(t *testing.T) {
 	defer os.RemoveAll(tempServerDir)
 
 	// Never installed, so this should fail to find the pack in the world.
-	_, err := UninstallAddon(addonPath(t, "foobar.mcaddon"), tempServerDir)
+	_, err := UninstallAddon(getAddonFixturePath(t, "foobar.mcaddon"), tempServerDir)
 	if err == nil {
 		t.Fatal("expected error uninstalling a pack that was never installed, got nil")
 	}
@@ -89,7 +89,7 @@ func TestInstallThenUninstallByUUID(t *testing.T) {
 	tempServerDir := copyServerFixture(t, "server_no_level_name")
 	defer os.RemoveAll(tempServerDir)
 
-	installed, err := InstallAddon(addonPath(t, "behavior_only.mcpack"), tempServerDir)
+	installed, err := InstallAddon(getAddonFixturePath(t, "behavior_only.mcpack"), tempServerDir)
 	if err != nil {
 		t.Fatalf("install failed: %v", err)
 	}

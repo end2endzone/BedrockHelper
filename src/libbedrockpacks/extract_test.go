@@ -10,7 +10,7 @@ import (
 
 func TestFindManifestsInAddon(t *testing.T) {
 	t.Run("bundle with master + two packs", func(t *testing.T) {
-		got, err := FindManifestsInAddon(addonPath(t, "foobar.mcaddon"))
+		got, err := FindManifestsInAddon(getAddonFixturePath(t, "foobar.mcaddon"))
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -24,7 +24,7 @@ func TestFindManifestsInAddon(t *testing.T) {
 	})
 
 	t.Run("standalone mcpack", func(t *testing.T) {
-		got, err := FindManifestsInAddon(addonPath(t, "solo.mcpack"))
+		got, err := FindManifestsInAddon(getAddonFixturePath(t, "solo.mcpack"))
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -38,7 +38,7 @@ func TestFindManifestsInAddon(t *testing.T) {
 	})
 
 	t.Run("zip with no manifest", func(t *testing.T) {
-		_, err := FindManifestsInAddon(addonPath(t, "no_manifest.zip"))
+		_, err := FindManifestsInAddon(getAddonFixturePath(t, "no_manifest.zip"))
 		if err == nil {
 			t.Fatal("expected error for zip with no manifest.json, got nil")
 		}
@@ -92,7 +92,7 @@ func TestPackManifestPaths(t *testing.T) {
 
 func TestExtractAddon(t *testing.T) {
 	dest := t.TempDir()
-	err := ExtractZip(addonPath(t, "foobar.mcaddon"), dest)
+	err := ExtractZip(getAddonFixturePath(t, "foobar.mcaddon"), dest)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -112,7 +112,7 @@ func TestExtractAddon(t *testing.T) {
 }
 
 func TestReadZipEntry(t *testing.T) {
-	data, err := readZipEntry(addonPath(t, "solo.mcpack"), "manifest.json")
+	data, err := readZipEntry(getAddonFixturePath(t, "solo.mcpack"), "manifest.json")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -126,7 +126,7 @@ func TestReadZipEntry(t *testing.T) {
 		t.Errorf("Name = %q, want %q", m.Header.Name, "Solo RP")
 	}
 
-	if _, err := readZipEntry(addonPath(t, "solo.mcpack"), "does/not/exist.json"); err == nil {
+	if _, err := readZipEntry(getAddonFixturePath(t, "solo.mcpack"), "does/not/exist.json"); err == nil {
 		t.Fatal("expected error reading a nonexistent zip entry, got nil")
 	}
 }

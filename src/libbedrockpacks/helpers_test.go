@@ -1,7 +1,6 @@
 package libbedrockpacks
 
 import (
-	"io"
 	"os"
 	"path/filepath"
 	"testing"
@@ -21,56 +20,49 @@ func testdataDir(t *testing.T) string {
 	return filepath.Join(wd, "..", "testdata")
 }
 
-func addonPath(t *testing.T, name string) string {
+func getAddonFixturePath(t *testing.T, name string) string {
 	t.Helper()
 	return filepath.Join(testdataDir(t), "addons", name)
 }
 
-func serverFixturePath(t *testing.T, name string) string {
+func getServerFixturePath(t *testing.T, name string) string {
 	t.Helper()
 	return filepath.Join(testdataDir(t), "servers", name)
 }
 
 // copyServerFixture copies the given testdata server directory into a temporary directory.
 // This is required to prevent calling function that would modify the directory. It makes sure we never affect the testdata files under CM.
-// Returns the path to the temporary copy. The caller is reponsible to delete the returned temporary directory.
+// Returns the path to the new temporary directory. The caller is reponsible to delete the returned temporary directory.
 func copyServerFixture(t *testing.T, name string) string {
 	t.Helper()
-	src := serverFixturePath(t, name)
+	src := getServerFixturePath(t, name)
 	dst := filepath.Join(t.TempDir(), name)
-	if err := copyTree(src, dst); err != nil {
+	err := copyDir(src, dst)
+	if err != nil {
 		t.Fatalf("failed to copy server fixture %q: %v", name, err)
 	}
 	return dst
 }
 
-func copyTree(src, dst string) error {
-	return filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		rel, err := filepath.Rel(src, path)
-		if err != nil {
-			return err
-		}
-		target := filepath.Join(dst, rel)
-		if info.IsDir() {
-			return os.MkdirAll(target, 0o755)
-		}
-		if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
-			return err
-		}
-		in, err := os.Open(path)
-		if err != nil {
-			return err
-		}
-		defer in.Close()
-		out, err := os.OpenFile(target, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o644)
-		if err != nil {
-			return err
-		}
-		defer out.Close()
-		_, err = io.Copy(out, in)
-		return err
-	})
+// copyAddonFixture copies the given testdata addon file into a temporary directory.
+// This is required to prevent calling function that would modify the addon. It makes sure we never affect the testdata files under CM.
+// Returns the path to the new temporary file. The caller is reponsible to delete the returned temporary file.
+func copyAddonFixture(t *testing.T, name string) string {
+	t.Helper()
+	src := getAddonFixturePath(t, name)
+	dst := filepath.Join(t.TempDir(), filepath.Base(src)) // put the file directly in TempDir.
+	err := copyFile(src, dst)
+	if err != nil {
+		t.Fatalf("failed to copy addon fixture %q: %v", name, err)
+	}
+	return dst
+}
+
+func TestCopyAddonFixture(t *testing.T) {
+	tempAddonPath := copyAddonFixture(t, "foobar.mcaddon")
+	defer os.Remove(tempAddonPath)
+
+	if tempAddonPath == "" {
+		t.Fatalf("unknown path to atemporary addon")
+	}
 }

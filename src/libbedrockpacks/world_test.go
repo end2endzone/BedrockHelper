@@ -24,7 +24,7 @@ func TestFindActiveWorldDir(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.testName, func(t *testing.T) {
-			serverDir := serverFixturePath(t, tc.fixture)
+			serverDir := getServerFixturePath(t, tc.fixture)
 			got, err := FindActiveWorldDir(serverDir)
 
 			if !tc.expectError && err != nil {
