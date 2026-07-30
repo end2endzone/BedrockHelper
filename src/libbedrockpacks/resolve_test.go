@@ -57,8 +57,8 @@ func TestResolvePackByUUID_InvalidServer(t *testing.T) {
 	defer os.RemoveAll(tempServerDir)
 
 	path, err := ResolvePackByUUID("33333333-3333-3333-3333-333333333333", tempServerDir)
-	if err != nil {
-		t.Fatalf("expected no error, got: %v", err)
+	if err == nil {
+		t.Fatalf("expected an error, got nil")
 	}
 	if path != "" {
 		t.Fatalf("expected an empty path, got: %v", path)

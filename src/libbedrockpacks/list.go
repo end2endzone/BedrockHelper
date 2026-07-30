@@ -1,7 +1,6 @@
 package libbedrockpacks
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -11,12 +10,9 @@ import (
 // For each registered UUID, it attempts to resolve the name of the pack by scanning the corresponding behavior_packs/ or
 // resource_packs/ directories for a matching manifest.json.
 func ListInstalledPacks(serverDir string) ([]RegisteredPack, error) {
-	ok, err := IsValidServerDirectory(serverDir)
+	err := ValidateServerDirectory(serverDir)
 	if err != nil {
 		return nil, err
-	}
-	if !ok {
-		return nil, fmt.Errorf("not a server installation directory: %v", serverDir)
 	}
 
 	// Find active world directory

@@ -11,16 +11,15 @@ import (
 // Returns the list of packs that were installed.
 // Returns an error otherwise.
 func InstallAddon(addonPath string, serverDir string) ([]InstalledPack, error) {
-	// Is that an addon ?
-	ok, err := IsValidAddonFile(addonPath)
-	if !ok || err != nil {
+	err := ValidateAddonFile(addonPath)
+	if err != nil {
 		return nil, err
 	}
 
 	// Is that a valid server installation ?
-	ok, err = IsValidServerDirectory(serverDir)
-	if !ok || err != nil {
-		return nil, fmt.Errorf("not a server installation directory: %v", serverDir)
+	err = ValidateServerDirectory(serverDir)
+	if err != nil {
+		return nil, err
 	}
 
 	// Identify all manifests in the addon

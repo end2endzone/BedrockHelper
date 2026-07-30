@@ -10,8 +10,8 @@ import (
 // Returns an empty path if no match is found.
 // Returns an error otherwise.
 func ResolvePackByUUID(uuid string, serverDir string) (string, error) {
-	ok, err := IsValidServerDirectory(serverDir)
-	if !ok || err != nil {
+	err := ValidateServerDirectory(serverDir)
+	if err != nil {
 		return "", err
 	}
 

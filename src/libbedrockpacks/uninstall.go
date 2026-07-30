@@ -11,12 +11,13 @@ import (
 // from the Minecraft Bedrock server installed at serverDir.
 // It returns the list of packs that were uninstalled or an error.
 func UninstallAddon(addonPath, serverDir string) ([]InstalledPack, error) {
-	ok, err := IsValidAddonFile(addonPath)
-	if !ok || err != nil {
+	err := ValidateAddonFile(addonPath)
+	if err != nil {
 		return nil, err
 	}
-	ok, err = IsValidServerDirectory(serverDir)
-	if !ok || err != nil {
+
+	err = ValidateServerDirectory(serverDir)
+	if err != nil {
 		return nil, err
 	}
 
@@ -71,8 +72,8 @@ func UninstallAddon(addonPath, serverDir string) ([]InstalledPack, error) {
 // from the Minecraft Bedrock server installed at serverDir.
 // This function is useful when the original add-on file is no longer available or has been deleted.
 func UninstallPackByUUID(uuid, serverDir string) (InstalledPack, error) {
-	ok, err := IsValidServerDirectory(serverDir)
-	if !ok || err != nil {
+	err := ValidateServerDirectory(serverDir)
+	if err != nil {
 		return InstalledPack{}, err
 	}
 

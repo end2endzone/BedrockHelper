@@ -10,12 +10,9 @@ import (
 
 // FindActiveWorldDir identifies the active world directory inside a Minecraft Bedrock server installation directory.
 func FindActiveWorldDir(serverDir string) (string, error) {
-	ok, err := IsValidServerDirectory(serverDir)
+	err := ValidateServerDirectory(serverDir)
 	if err != nil {
 		return "", err
-	}
-	if !ok {
-		return "", fmt.Errorf("'%v' is not a server directory: %v", serverDir, err)
 	}
 
 	worldsDir := filepath.Join(serverDir, "worlds")

@@ -9,10 +9,10 @@ func TestIsValidServerDirectory(t *testing.T) {
 		expectError bool
 		expectValid bool
 	}{
-		{"Test not a server directory", "not_a_server", false, false},
-		{"Test missing executable", "not_a_server_missing_exec", false, false},
-		{"Test missing server.properties", "not_a_server_missing_server.properties", false, false},
-		{"Test missing worlds directory", "not_a_server_missing_worlds", false, false},
+		{"Test not a server directory", "not_a_server", true, false},
+		{"Test missing executable", "not_a_server_missing_exec", true, false},
+		{"Test missing server.properties", "not_a_server_missing_server.properties", true, false},
+		{"Test missing worlds directory", "not_a_server_missing_worlds", true, false},
 
 		{"Test server with content", "server", false, true},
 		{"Test missing level-name falls back to first world dir", "server_no_level_name", false, true},
@@ -22,7 +22,8 @@ func TestIsValidServerDirectory(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.testName, func(t *testing.T) {
 			path := getServerFixturePath(t, tc.fixture)
-			ok, err := IsValidServerDirectory(path)
+			ok := IsValidServerDirectory(path)
+			err := ValidateServerDirectory(path)
 			if ok != tc.expectValid {
 				t.Fatalf("IsValidServerDirectory(%q) = (%v, %v), expected %v", path, ok, err, tc.expectValid)
 			}
@@ -36,7 +37,9 @@ func TestIsValidServerDirectory(t *testing.T) {
 	}
 
 	t.Run("Test nonexistent directory", func(t *testing.T) {
-		ok, err := IsValidServerDirectory("/path/does/not/exist/at/all")
+		path := "/path/does/not/exist/at/all"
+		ok := IsValidServerDirectory(path)
+		err := ValidateServerDirectory(path)
 		if ok || err == nil {
 			t.Fatalf("expected failure for nonexistent directory, got ok=%v err=%v", ok, err)
 		}
@@ -58,7 +61,8 @@ func TestIsValidAddonFile(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			path := getAddonFixturePath(t, tc.file)
-			ok, err := IsValidAddonFile(path)
+			ok := IsValidAddonFile(path)
+			err := ValidateAddonFile(path)
 			if ok != tc.wantValid {
 				t.Fatalf("IsValidAddonFile(%q) = (%v, %v), want valid=%v", path, ok, err, tc.wantValid)
 			}
@@ -66,14 +70,18 @@ func TestIsValidAddonFile(t *testing.T) {
 	}
 
 	t.Run("Test wrong extension", func(t *testing.T) {
-		ok, err := IsValidAddonFile(getAddonFixturePath(t, "foobar.mcaddon") + ".txt")
+		path := getAddonFixturePath(t, "foobar.mcaddon") + ".txt"
+		ok := IsValidAddonFile(path)
+		err := ValidateAddonFile(path)
 		if ok || err == nil {
 			t.Fatalf("expected failure for unsupported extension, got ok=%v err=%v", ok, err)
 		}
 	})
 
 	t.Run("Test nonexistent file", func(t *testing.T) {
-		ok, err := IsValidAddonFile("/tmp/does-not-exist-xyz.mcpack")
+		path := "/tmp/does-not-exist-xyz.mcpack"
+		ok := IsValidAddonFile(path)
+		err := ValidateAddonFile(path)
 		if ok || err == nil {
 			t.Fatalf("expected failure for nonexistent file, got ok=%v err=%v", ok, err)
 		}

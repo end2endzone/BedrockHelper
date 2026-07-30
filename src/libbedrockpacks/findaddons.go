@@ -29,8 +29,7 @@ func FindAddonsInDir(dir string, recursive bool) ([]string, error) {
 			}
 
 			// run full check for file
-			ok, _ := IsValidAddonFile(path)
-			if ok {
+			if IsValidAddonFile(path) {
 				abs, err := filepath.Abs(path)
 				if err != nil {
 					abs = path
@@ -66,7 +65,7 @@ func FindAddonsInDir(dir string, recursive bool) ([]string, error) {
 		}
 
 		// run full check for file
-		if ok, _ := IsValidAddonFile(path); ok {
+		if IsValidAddonFile(path) {
 			abs, err := filepath.Abs(path)
 			if err != nil {
 				abs = path

@@ -15,18 +15,19 @@ var validAddonExtensions = map[string]bool{
 	".mcpack":  true,
 }
 
-// IsValidServerDirectory validates that the given path is a directory that matches a Minecraft Bedrock dedicated server installation.
+// ValidateServerDirectory asserts that the given path is a directory that matches a Minecraft Bedrock dedicated server installation.
 // It is considered valid if it contains the following:
 // * a server.properties file
 // * a bedrock_server executable
 // * a worlds directory.
-func IsValidServerDirectory(path string) (bool, error) {
+// Returns nil if the given path is server. Returns a valid error otherwise.
+func ValidateServerDirectory(path string) error {
 	info, err := os.Stat(path)
 	if err != nil {
-		return false, fmt.Errorf("server location %q does not exist: %w", path, err)
+		return fmt.Errorf("server path %q does not exist: %w", path, err)
 	}
 	if !info.IsDir() {
-		return false, fmt.Errorf("server location %q is not a directory", path)
+		return fmt.Errorf("server path is not a directory: %q", path)
 	}
 
 	// Check mandatory files/directories
@@ -34,9 +35,7 @@ func IsValidServerDirectory(path string) (bool, error) {
 	for _, c := range candidates {
 		_, err := os.Stat(filepath.Join(path, c))
 		if err != nil {
-			// assume file/dir is missing
-			// path is not a server install directory
-			return false, nil
+			return fmt.Errorf("server path %q is missing files: %w", path, err)
 		}
 	}
 
@@ -50,39 +49,67 @@ func IsValidServerDirectory(path string) (bool, error) {
 		}
 	}
 	if !execFound {
-		// exec file is missing
-		// path is not a server install directory
-		return false, nil
+		return fmt.Errorf("server path %q is missing the executable file", path)
 	}
 
-	return true, nil
+	return nil
 }
 
-// IsValidAddonFile validates that the given path is a valid addon file.
-// Addon files are zip files with one of the following accepted file extensions:
+// IsValidServerDirectory validates that the given path is a directory that matches a Minecraft Bedrock dedicated server installation.
+// It is considered valid if it contains the following:
+// * a server.properties file
+// * a bedrock_server executable
+// * a worlds directory.
+// Returns true if the given path is valid server. Returns false otherwise.
+func IsValidServerDirectory(path string) bool {
+	err := ValidateServerDirectory(path)
+	if err != nil {
+		// something is wront, not a valid server directory
+		return false
+	}
+	return true
+}
+
+// ValidateAddonFile asserts that the given path is a valid addon file.
+// Addon files are zip file archives.
+// The file extension must be one of the following:
 // `.zip`, `.mcaddon` or `.mcpack`.
-func IsValidAddonFile(path string) (bool, error) {
+func ValidateAddonFile(path string) error {
 	// Check the file's path
 	info, err := os.Stat(path)
 	if err != nil {
-		return false, fmt.Errorf("add-on file %q does not exist: %w", path, err)
+		return fmt.Errorf("add-on file %q does not exist: %w", path, err)
 	}
 	if info.IsDir() {
-		return false, fmt.Errorf("%q is a directory, not an add-on file", path)
+		return fmt.Errorf("add-on file path is a directory: %q", path)
 	}
 
 	// Check file extension
 	ext := strings.ToLower(filepath.Ext(path))
 	if !validAddonExtensions[ext] {
-		return false, fmt.Errorf("%q does not have a supported add-on extension (.zip, .mcaddon, .mcpack)", path)
+		return fmt.Errorf("add-on file %q has an unsupported file extension: %q", path, ext)
 	}
 
 	// Check zip archive
 	r, err := zip.OpenReader(path)
 	if err != nil {
-		return false, fmt.Errorf("%q is not a valid zip archive: %w", path, err)
+		return fmt.Errorf("add-on file %q is not a valid zip archive: %w", path, err)
 	}
 	defer r.Close()
 
-	return true, nil
+	return nil
+}
+
+// IsValidAddonFile validates that the given path is a directory that matches a Minecraft Bedrock dedicated server installation.
+// Addon files are zip file archives.
+// The file extension must be one of the following:
+// `.zip`, `.mcaddon` or `.mcpack`.
+// Returns true if the given path is a valid add-on. Returns false otherwise.
+func IsValidAddonFile(path string) bool {
+	err := ValidateAddonFile(path)
+	if err != nil {
+		// something is wront, not a valid add-on file
+		return false
+	}
+	return true
 }
