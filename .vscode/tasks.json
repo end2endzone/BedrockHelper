@@ -82,10 +82,7 @@
             "problemMatcher": [
                 "$go"
             ],
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            },
+            "group": "none",
             "presentation": {
                 "echo": true,
                 "reveal": "always",
