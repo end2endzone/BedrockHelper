@@ -9,6 +9,8 @@ import (
 )
 
 // FindActiveWorldDir identifies the active world directory inside a Minecraft Bedrock server installation directory.
+// Returns the path to the active world directory.
+// Returns an error otherwise.
 func FindActiveWorldDir(serverDir string) (string, error) {
 	err := ValidateServerDirectory(serverDir)
 	if err != nil {
@@ -36,19 +38,56 @@ func FindActiveWorldDir(serverDir string) (string, error) {
 		return worldDir, nil
 	}
 
-	// "level-name" property not found, check for a single directory under `worlds` directory
-	entries, err := os.ReadDir(worldsDir)
+	// Property "level-name" property not found
+	// Fall back to the first directory in `worlds` directory.
+	worldsDirectories, err := FindWorldDirectories(serverDir)
 	if err != nil {
-		return "", fmt.Errorf("could not determine active world: worlds directory %q is missing or unreadable: %w", worldsDir, err)
+		return "", err
+	}
+
+	if len(worldsDirectories) > 0 {
+		// Found !
+		return worldsDirectories[0], nil
+	}
+
+	return "", fmt.Errorf("could not determine active world for %q", serverDir)
+}
+
+// FindActiveWorldDir found the world directories inside a Minecraft Bedrock server installation directory.
+// Returns an error is the server is missing a `worlds` directory.
+// Returns an empty list if the server `worlds` directory is empty.
+// Returns the paths of the worlds otherwise.
+func FindWorldDirectories(serverDir string) ([]string, error) {
+	var matches []string
+
+	err := ValidateServerDirectory(serverDir)
+	if err != nil {
+		return matches, err
+	}
+
+	// Check the `worlds` subdirectory
+	worldsSubDir := filepath.Join(serverDir, "worlds")
+	info, err := os.Stat(worldsSubDir)
+	if err != nil {
+		return matches, fmt.Errorf("worlds directory %q is missing or unreadable: %w", worldsSubDir, err)
+	}
+	if !info.IsDir() {
+		return matches, fmt.Errorf("expected a directory: %q", worldsSubDir)
+	}
+
+	// Get all the world directories
+	entries, err := os.ReadDir(worldsSubDir)
+	if err != nil {
+		return matches, fmt.Errorf("failed to read world directories: %w", err)
 	}
 	for _, e := range entries {
 		if e.IsDir() {
-			// return first match
-			return filepath.Join(worldsDir, e.Name()), nil
+			worldDir := filepath.Join(worldsSubDir, e.Name())
+			matches = append(matches, worldDir)
 		}
 	}
 
-	return "", fmt.Errorf("could not determine active world: no world directories found under %q", worldsDir)
+	return matches, nil
 }
 
 // readLevelName reads the "level-name" property in a properties file.
@@ -78,7 +117,8 @@ func readLevelName(propsPath string) (string, error) {
 		value := strings.TrimSpace(strings.TrimPrefix(line, "level-name="))
 		return value, nil
 	}
-	if err := scanner.Err(); err != nil {
+	err = scanner.Err()
+	if err != nil {
 		return "", err
 	}
 

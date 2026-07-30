@@ -9,7 +9,8 @@ import (
 // LoadManifestFromBytes parses the raw JSON bytes of a manifest.json file as an AddonManifest structure.
 func LoadManifestFromBytes(data []byte) (*AddonManifest, error) {
 	var m AddonManifest
-	if err := json.Unmarshal(data, &m); err != nil {
+	err := json.Unmarshal(data, &m)
+	if err != nil {
 		return nil, fmt.Errorf("failed to parse manifest.json: %w", err)
 	}
 	if m.Header.UUID == "" {

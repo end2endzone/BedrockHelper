@@ -38,7 +38,8 @@ func UninstallAddon(addonPath, serverDir string) ([]InstalledPack, error) {
 	defer os.RemoveAll(tempDir)
 
 	// Unzip
-	if err := ExtractZip(addonPath, tempDir); err != nil {
+	err = ExtractZip(addonPath, tempDir)
+	if err != nil {
 		return nil, err
 	}
 
@@ -161,6 +162,7 @@ func findPackInstallDirByUUID(worldDir, uuid string) (string, PackKind, error) {
 
 			manifest, err := LoadManifestFromFile(manifestPath)
 			if err != nil {
+				// No manifest.json or invalid file. Not a valid pack.
 				continue
 			}
 

@@ -70,7 +70,8 @@ func TestUninstallPackByUUID(t *testing.T) {
 	if len(entries) != 0 {
 		t.Errorf("expected registry to be empty after uninstall, got %v", entries)
 	}
-	if _, err := os.Stat(pack.Directory); !os.IsNotExist(err) {
+	_, err = os.Stat(pack.Directory)
+	if !os.IsNotExist(err) {
 		t.Errorf("expected pack directory to be removed")
 	}
 }

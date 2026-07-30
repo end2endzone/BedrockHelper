@@ -20,11 +20,13 @@ func TestResolvePackByUUID(t *testing.T) {
 		t.Fatalf("failed to read fixture addon: %v", err)
 	}
 	newServerAddonsSubDir := filepath.Join(tempServerDir, "new_incoming")
-	if err := os.MkdirAll(newServerAddonsSubDir, 0o755); err != nil {
+	err = os.MkdirAll(newServerAddonsSubDir, 0o755)
+	if err != nil {
 		t.Fatal(err)
 	}
 	newAddonPath := filepath.Join(newServerAddonsSubDir, "foobar.mcaddon")
-	if err := os.WriteFile(newAddonPath, src, 0o644); err != nil {
+	err = os.WriteFile(newAddonPath, src, 0o644)
+	if err != nil {
 		t.Fatal(err)
 	}
 

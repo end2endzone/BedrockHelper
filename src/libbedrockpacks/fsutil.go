@@ -47,7 +47,8 @@ func copyDir(src, dst string) error {
 			return os.MkdirAll(target, 0o755)
 		}
 
-		if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
+		err = os.MkdirAll(filepath.Dir(target), 0o755)
+		if err != nil {
 			return err
 		}
 		in, err := os.Open(path)

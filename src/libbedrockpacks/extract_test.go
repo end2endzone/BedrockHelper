@@ -126,7 +126,8 @@ func TestReadZipEntry(t *testing.T) {
 		t.Errorf("Name = %q, want %q", m.Header.Name, "Solo RP")
 	}
 
-	if _, err := readZipEntry(getAddonFixturePath(t, "solo.mcpack"), "does/not/exist.json"); err == nil {
+	_, err = readZipEntry(getAddonFixturePath(t, "solo.mcpack"), "does/not/exist.json")
+	if err == nil {
 		t.Fatal("expected error reading a nonexistent zip entry, got nil")
 	}
 }

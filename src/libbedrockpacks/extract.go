@@ -51,7 +51,8 @@ func ExtractZip(path string, destDir string) error {
 		}
 
 		// Call utility function to process a save a single file
-		if err := extractOneFile(f, targetPath); err != nil {
+		err = extractOneFile(f, targetPath)
+		if err != nil {
 			return fmt.Errorf("failed to extract %q from %q: %w", f.Name, path, err)
 		}
 	}

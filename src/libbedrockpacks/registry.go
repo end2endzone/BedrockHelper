@@ -39,7 +39,8 @@ func readRegistry(worldDir string, kind PackKind) ([]registryEntry, error) {
 
 	// Parse all registry entries
 	var entries []registryEntry
-	if err := json.Unmarshal(data, &entries); err != nil {
+	err = json.Unmarshal(data, &entries)
+	if err != nil {
 		return nil, fmt.Errorf("failed to parse %q: %w", path, err)
 	}
 

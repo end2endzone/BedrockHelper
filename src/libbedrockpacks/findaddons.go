@@ -3,7 +3,6 @@ package libbedrockpacks
 import (
 	"os"
 	"path/filepath"
-	"strings"
 )
 
 // FindAddonsInDir searches dir (resursively, if recursive is true) for files that are valid add-on packs.
@@ -23,7 +22,7 @@ func FindAddonsInDir(dir string, recursive bool) ([]string, error) {
 			}
 
 			// check file extension
-			if !validAddonExtensions[strings.ToLower(filepath.Ext(path))] {
+			if !IsValidAddonFileExtension(path) {
 				// skip invalid file extension
 				return nil
 			}
@@ -59,7 +58,7 @@ func FindAddonsInDir(dir string, recursive bool) ([]string, error) {
 
 		// check file extension
 		path := filepath.Join(dir, e.Name())
-		if !validAddonExtensions[strings.ToLower(filepath.Ext(path))] {
+		if !IsValidAddonFileExtension(path) {
 			// skip invalid file extension
 			continue
 		}

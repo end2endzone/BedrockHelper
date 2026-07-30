@@ -15,6 +15,16 @@ var validAddonExtensions = map[string]bool{
 	".mcpack":  true,
 }
 
+// IsValidAddonFileExtension checks if the given file path has a valid file extension for an add-on.
+func IsValidAddonFileExtension(path string) bool {
+	// check file extension
+	if !validAddonExtensions[strings.ToLower(filepath.Ext(path))] {
+		// skip invalid file extension
+		return false
+	}
+	return true
+}
+
 // ValidateServerDirectory asserts that the given path is a directory that matches a Minecraft Bedrock dedicated server installation.
 // It is considered valid if it contains the following:
 // * a server.properties file
@@ -85,8 +95,8 @@ func ValidateAddonFile(path string) error {
 	}
 
 	// Check file extension
-	ext := strings.ToLower(filepath.Ext(path))
-	if !validAddonExtensions[ext] {
+	if !IsValidAddonFileExtension(path) {
+		ext := filepath.Ext(path)
 		return fmt.Errorf("add-on file %q has an unsupported file extension: %q", path, ext)
 	}
 
