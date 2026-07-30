@@ -60,8 +60,10 @@ func TestMoveDir(t *testing.T) {
 }
 
 func TestFindPackDirByUUID(t *testing.T) {
-	newServerDir := copyServerFixture(t, "server_with_installed_pack")
-	worldDir, err := FindActiveWorldDir(newServerDir)
+	tempServerDir := copyServerFixture(t, "server_with_installed_pack")
+	defer os.RemoveAll(tempServerDir)
+
+	worldDir, err := FindActiveWorldDir(tempServerDir)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

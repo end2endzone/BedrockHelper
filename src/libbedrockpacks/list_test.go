@@ -1,11 +1,15 @@
 package libbedrockpacks
 
-import "testing"
+import (
+	"os"
+	"testing"
+)
 
 func TestListInstalledPacks(t *testing.T) {
-	newServerDir := copyServerFixture(t, "server_with_installed_pack")
+	tempServerDir := copyServerFixture(t, "server_with_installed_pack")
+	defer os.RemoveAll(tempServerDir)
 
-	packs, err := ListInstalledPacks(newServerDir)
+	packs, err := ListInstalledPacks(tempServerDir)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -24,8 +28,10 @@ func TestListInstalledPacks(t *testing.T) {
 }
 
 func TestListInstalledPacks_EmptyServer(t *testing.T) {
-	newServerDir := copyServerFixture(t, "server")
-	packs, err := ListInstalledPacks(newServerDir)
+	tempServerDir := copyServerFixture(t, "server")
+	defer os.RemoveAll(tempServerDir)
+
+	packs, err := ListInstalledPacks(tempServerDir)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -35,13 +41,14 @@ func TestListInstalledPacks_EmptyServer(t *testing.T) {
 }
 
 func TestListInstalledPacks_AfterInstallAndUninstall(t *testing.T) {
-	newServerDir := copyServerFixture(t, "server")
+	tempServerDir := copyServerFixture(t, "server")
+	defer os.RemoveAll(tempServerDir)
 
-	_, err := InstallAddon(addonPath(t, "foobar.mcaddon"), newServerDir)
+	_, err := InstallAddon(addonPath(t, "foobar.mcaddon"), tempServerDir)
 	if err != nil {
 		t.Fatalf("install failed: %v", err)
 	}
-	packs, err := ListInstalledPacks(newServerDir)
+	packs, err := ListInstalledPacks(tempServerDir)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -49,11 +56,11 @@ func TestListInstalledPacks_AfterInstallAndUninstall(t *testing.T) {
 		t.Fatalf("expected 2 registered packs after install, got %d", len(packs))
 	}
 
-	_, err = UninstallAddon(addonPath(t, "foobar.mcaddon"), newServerDir)
+	_, err = UninstallAddon(addonPath(t, "foobar.mcaddon"), tempServerDir)
 	if err != nil {
 		t.Fatalf("uninstall failed: %v", err)
 	}
-	packs, err = ListInstalledPacks(newServerDir)
+	packs, err = ListInstalledPacks(tempServerDir)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

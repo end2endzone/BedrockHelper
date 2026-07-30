@@ -8,9 +8,10 @@ import (
 )
 
 func TestInstallAddon_Bundle(t *testing.T) {
-	newServerDir := copyServerFixture(t, "server_no_level_name")
+	tempServerDir := copyServerFixture(t, "server_no_level_name")
+	defer os.RemoveAll(tempServerDir)
 
-	installedPacks, err := InstallAddon(addonPath(t, "foobar.mcaddon"), newServerDir)
+	installedPacks, err := InstallAddon(addonPath(t, "foobar.mcaddon"), tempServerDir)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -33,7 +34,7 @@ func TestInstallAddon_Bundle(t *testing.T) {
 	}
 
 	// Verify both registry files were updated.
-	worldDir, _ := FindActiveWorldDir(newServerDir)
+	worldDir, _ := FindActiveWorldDir(tempServerDir)
 	bpEntries, err := readRegistry(worldDir, BehaviorPack)
 	if err != nil || len(bpEntries) != 1 {
 		t.Errorf("behavior pack registry = %v, err %v; want 1 entry", bpEntries, err)
@@ -52,9 +53,10 @@ func TestInstallAddon_Bundle(t *testing.T) {
 }
 
 func TestInstallAddon_StandaloneMcpack(t *testing.T) {
-	newServerDir := copyServerFixture(t, "server_no_level_name")
+	tempServerDir := copyServerFixture(t, "server_no_level_name")
+	defer os.RemoveAll(tempServerDir)
 
-	installedPacks, err := InstallAddon(addonPath(t, "solo.mcpack"), newServerDir)
+	installedPacks, err := InstallAddon(addonPath(t, "solo.mcpack"), tempServerDir)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -71,14 +73,15 @@ func TestInstallAddon_StandaloneMcpack(t *testing.T) {
 }
 
 func TestInstallAddon_ReinstallReplacesExisting(t *testing.T) {
-	newServerDir := copyServerFixture(t, "server")
+	tempServerDir := copyServerFixture(t, "server")
+	defer os.RemoveAll(tempServerDir)
 
-	_, err := InstallAddon(addonPath(t, "foobar.mcaddon"), newServerDir)
+	_, err := InstallAddon(addonPath(t, "foobar.mcaddon"), tempServerDir)
 	if err != nil {
 		t.Fatalf("first install failed: %v", err)
 	}
 
-	installedPacks, err := InstallAddon(addonPath(t, "foobar.mcaddon"), newServerDir)
+	installedPacks, err := InstallAddon(addonPath(t, "foobar.mcaddon"), tempServerDir)
 	if err != nil {
 		t.Fatalf("reinstall failed: %v", err)
 	}
@@ -86,7 +89,7 @@ func TestInstallAddon_ReinstallReplacesExisting(t *testing.T) {
 		t.Fatalf("expected 2 packs after reinstall, got %d", len(installedPacks))
 	}
 
-	worldDir, _ := FindActiveWorldDir(newServerDir)
+	worldDir, _ := FindActiveWorldDir(tempServerDir)
 	bpEntries, _ := readRegistry(worldDir, BehaviorPack)
 	if len(bpEntries) != 1 {
 		t.Errorf("expected reinstall to not duplicate registry entries, got %d", len(bpEntries))
@@ -94,17 +97,18 @@ func TestInstallAddon_ReinstallReplacesExisting(t *testing.T) {
 }
 
 func TestInstallAddon_Errors(t *testing.T) {
-	newServerDir := copyServerFixture(t, "server")
+	tempServerDir := copyServerFixture(t, "server")
+	defer os.RemoveAll(tempServerDir)
 
 	t.Run("invalid addon file", func(t *testing.T) {
-		_, err := InstallAddon(addonPath(t, "corrupt.mcaddon"), newServerDir)
+		_, err := InstallAddon(addonPath(t, "corrupt.mcaddon"), tempServerDir)
 		if err == nil {
 			t.Fatal("expected error installing a corrupt add-on, got nil")
 		}
 	})
 
 	t.Run("addon with no manifests", func(t *testing.T) {
-		_, err := InstallAddon(addonPath(t, "no_manifest.zip"), newServerDir)
+		_, err := InstallAddon(addonPath(t, "no_manifest.zip"), tempServerDir)
 		if err == nil {
 			t.Fatal("expected error installing an add-on with no manifests, got nil")
 		}
@@ -121,8 +125,10 @@ func TestInstallAddon_Errors(t *testing.T) {
 	t.Run("server with level-name set but worlds dir not yet created should fail", func(t *testing.T) {
 		// InstallAddon should create directory `worlds/<level-name>/behavior_packs` or `worlds/<level-name>/resource_packs`
 		// on the fly even if they don't exist yet.
-		newServerDir := copyServerFixture(t, "not_a_server_missing_worlds")
-		_ /*installedPacks*/, err := InstallAddon(addonPath(t, "foobar.mcaddon"), newServerDir)
+		tempServerDir := copyServerFixture(t, "not_a_server_missing_worlds")
+		defer os.RemoveAll(tempServerDir)
+
+		_ /*installedPacks*/, err := InstallAddon(addonPath(t, "foobar.mcaddon"), tempServerDir)
 		if err == nil {
 			t.Fatalf("expected an error, got nil")
 		}

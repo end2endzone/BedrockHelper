@@ -6,14 +6,15 @@ import (
 )
 
 func TestUninstallAddon(t *testing.T) {
-	newServerDir := copyServerFixture(t, "server")
+	tempServerDir := copyServerFixture(t, "server")
+	defer os.RemoveAll(tempServerDir)
 
-	_, err := InstallAddon(addonPath(t, "foobar.mcaddon"), newServerDir)
+	_, err := InstallAddon(addonPath(t, "foobar.mcaddon"), tempServerDir)
 	if err != nil {
 		t.Fatalf("setup install failed: %v", err)
 	}
 
-	uninstalledPacks, err := UninstallAddon(addonPath(t, "foobar.mcaddon"), newServerDir)
+	uninstalledPacks, err := UninstallAddon(addonPath(t, "foobar.mcaddon"), tempServerDir)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -22,7 +23,7 @@ func TestUninstallAddon(t *testing.T) {
 	}
 
 	// Verify both registry files were deleted.
-	worldDir, _ := FindActiveWorldDir(newServerDir)
+	worldDir, _ := FindActiveWorldDir(tempServerDir)
 	bpEntries, _ := readRegistry(worldDir, BehaviorPack)
 	rpEntries, _ := readRegistry(worldDir, ResourcePack)
 	if len(bpEntries) != 0 || len(rpEntries) != 0 {
@@ -39,18 +40,21 @@ func TestUninstallAddon(t *testing.T) {
 }
 
 func TestUninstallAddon_NotInstalled(t *testing.T) {
-	newServerDir := copyServerFixture(t, "server")
+	tempServerDir := copyServerFixture(t, "server")
+	defer os.RemoveAll(tempServerDir)
+
 	// Never installed, so this should fail to find the pack in the world.
-	_, err := UninstallAddon(addonPath(t, "foobar.mcaddon"), newServerDir)
+	_, err := UninstallAddon(addonPath(t, "foobar.mcaddon"), tempServerDir)
 	if err == nil {
 		t.Fatal("expected error uninstalling a pack that was never installed, got nil")
 	}
 }
 
 func TestUninstallPackByUUID(t *testing.T) {
-	newServerDir := copyServerFixture(t, "server_with_installed_pack")
+	tempServerDir := copyServerFixture(t, "server_with_installed_pack")
+	defer os.RemoveAll(tempServerDir)
 
-	pack, err := UninstallPackByUUID("2bda6085-9d71-4d8a-9b9f-74e07b30459c", newServerDir)
+	pack, err := UninstallPackByUUID("2bda6085-9d71-4d8a-9b9f-74e07b30459c", tempServerDir)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -61,7 +65,7 @@ func TestUninstallPackByUUID(t *testing.T) {
 		t.Errorf("Kind = %v, want BehaviorPack", pack.Kind)
 	}
 
-	worldDir, _ := FindActiveWorldDir(newServerDir)
+	worldDir, _ := FindActiveWorldDir(tempServerDir)
 	entries, _ := readRegistry(worldDir, BehaviorPack)
 	if len(entries) != 0 {
 		t.Errorf("expected registry to be empty after uninstall, got %v", entries)
@@ -72,17 +76,20 @@ func TestUninstallPackByUUID(t *testing.T) {
 }
 
 func TestUninstallPackByUUID_UnknownUUID(t *testing.T) {
-	newServerDir := copyServerFixture(t, "server_with_installed_pack")
-	_, err := UninstallPackByUUID("00000000-0000-0000-0000-000000000000", newServerDir)
+	tempServerDir := copyServerFixture(t, "server_with_installed_pack")
+	defer os.RemoveAll(tempServerDir)
+
+	_, err := UninstallPackByUUID("00000000-0000-0000-0000-000000000000", tempServerDir)
 	if err == nil {
 		t.Fatal("expected error for unknown uuid, got nil")
 	}
 }
 
 func TestInstallThenUninstallByUUID(t *testing.T) {
-	newServerDir := copyServerFixture(t, "server_no_level_name")
+	tempServerDir := copyServerFixture(t, "server_no_level_name")
+	defer os.RemoveAll(tempServerDir)
 
-	installed, err := InstallAddon(addonPath(t, "behavior_only.mcpack"), newServerDir)
+	installed, err := InstallAddon(addonPath(t, "behavior_only.mcpack"), tempServerDir)
 	if err != nil {
 		t.Fatalf("install failed: %v", err)
 	}
@@ -90,7 +97,7 @@ func TestInstallThenUninstallByUUID(t *testing.T) {
 		t.Fatalf("expected 1 installed pack, got %d", len(installed))
 	}
 
-	pack, err := UninstallPackByUUID(installed[0].UUID, newServerDir)
+	pack, err := UninstallPackByUUID(installed[0].UUID, tempServerDir)
 	if err != nil {
 		t.Fatalf("uninstall by uuid failed: %v", err)
 	}

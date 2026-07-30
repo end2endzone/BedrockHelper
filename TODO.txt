@@ -1,7 +1,4 @@
-- Implement ListInstalledPacks() in list.go & tests
-- Implement unit tests for fsutils.go
 - Create pack.go ?
 - Clarify APIs for getting `testdata` files and directories.
 - Create copyAddonFixture ?
-- Delete temporary directories creates during tests with copyServerFixture()
 - Check usage of IsValidServerDirectory(). Consider replacing them with `IsValidServerDirectory()` which do nto return an error or `AssertValidServerDirectory()` which do not return a bool but only an error.
