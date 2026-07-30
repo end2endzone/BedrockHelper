@@ -21,7 +21,7 @@ func UninstallAddon(addonPath, serverDir string) ([]InstalledPack, error) {
 		return nil, err
 	}
 
-	manifestsPathsInAddon, err := FindManifestsInAddon(addonPath)
+	manifestsPathsInAddon, err := FindManifestsRelativePathInAddon(addonPath)
 	if err != nil {
 		return nil, err
 	}

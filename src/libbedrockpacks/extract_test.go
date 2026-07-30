@@ -10,7 +10,7 @@ import (
 
 func TestFindManifestsInAddon(t *testing.T) {
 	t.Run("bundle with master + two packs", func(t *testing.T) {
-		got, err := FindManifestsInAddon(getAddonFixturePath(t, "foobar.mcaddon"))
+		got, err := FindManifestsRelativePathInAddon(getAddonFixturePath(t, "foobar.mcaddon"))
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -24,7 +24,7 @@ func TestFindManifestsInAddon(t *testing.T) {
 	})
 
 	t.Run("standalone mcpack", func(t *testing.T) {
-		got, err := FindManifestsInAddon(getAddonFixturePath(t, "solo.mcpack"))
+		got, err := FindManifestsRelativePathInAddon(getAddonFixturePath(t, "solo.mcpack"))
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -38,14 +38,14 @@ func TestFindManifestsInAddon(t *testing.T) {
 	})
 
 	t.Run("zip with no manifest", func(t *testing.T) {
-		_, err := FindManifestsInAddon(getAddonFixturePath(t, "no_manifest.zip"))
+		_, err := FindManifestsRelativePathInAddon(getAddonFixturePath(t, "no_manifest.zip"))
 		if err == nil {
 			t.Fatal("expected error for zip with no manifest.json, got nil")
 		}
 	})
 
 	t.Run("nonexistent file", func(t *testing.T) {
-		_, err := FindManifestsInAddon("/tmp/nope.mcaddon")
+		_, err := FindManifestsRelativePathInAddon("/tmp/nope.mcaddon")
 		if err == nil {
 			t.Fatal("expected error for nonexistent file, got nil")
 		}

@@ -23,7 +23,7 @@ func InstallAddon(addonPath string, serverDir string) ([]InstalledPack, error) {
 	}
 
 	// Identify all manifests in the addon
-	manifestsPathsInAddon, err := FindManifestsInAddon(addonPath)
+	manifestsPathsInAddon, err := FindManifestsRelativePathInAddon(addonPath)
 	if err != nil {
 		return nil, err
 	}

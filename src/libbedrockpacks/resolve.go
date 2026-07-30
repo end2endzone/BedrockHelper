@@ -25,7 +25,7 @@ func ResolvePackByUUID(uuid string, serverDir string) (string, error) {
 	for _, addonPath := range addonPaths {
 
 		// find all manifests inside the addon
-		manifestPaths, err := FindManifestsInAddon(addonPath)
+		manifestPaths, err := FindManifestsRelativePathInAddon(addonPath)
 		if err != nil {
 			continue
 		}

@@ -80,10 +80,10 @@ func extractOneFile(f *zip.File, targetPath string) error {
 	return nil
 }
 
-// FindManifestsInAddon returns the archive-relative paths of every manifest.json file found inside the given archive add-on file.
+// FindManifestsRelativePathInAddon returns the archive-relative paths of every manifest.json file found inside the given archive add-on file.
 // Note that returned paths are using forward slashes, as stored in the zip archive.
 // Returns an error if no manifest.json is found in the addon.
-func FindManifestsInAddon(addonPath string) ([]string, error) {
+func FindManifestsRelativePathInAddon(addonPath string) ([]string, error) {
 	r, err := zip.OpenReader(addonPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open add-on %q: %w", addonPath, err)
