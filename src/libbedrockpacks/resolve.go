@@ -39,7 +39,7 @@ func ResolvePackByUUID(uuid string, serverDir string) (string, error) {
 			}
 
 			// Parse it
-			m, err := ParseManifest(data)
+			m, err := LoadManifestFromBytes(data)
 			if err != nil {
 				continue
 			}

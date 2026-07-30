@@ -52,15 +52,9 @@ func UninstallAddon(addonPath, serverDir string) ([]InstalledPack, error) {
 		manifestFullPath := filepath.Join(tempDir, filepath.FromSlash(manifestRelPath))
 
 		// Read the unzipped manifest's json file
-		data, err := os.ReadFile(manifestFullPath)
+		manifest, err := LoadManifestFromFile(manifestFullPath)
 		if err != nil {
-			return uninstalled, fmt.Errorf("failed to read %q from extracted add-on: %w", manifestRelPath, err)
-		}
-
-		// Parse it as a AddonManifest pointer
-		manifest, err := ParseManifest(data)
-		if err != nil {
-			return uninstalled, fmt.Errorf("invalid manifest %q in %q: %w", manifestRelPath, addonPath, err)
+			return uninstalled, fmt.Errorf("failed to load manifest: %w", err)
 		}
 
 		pack, err := uninstallPackFromWorld(worldDir, manifest.Header.UUID)
@@ -106,22 +100,13 @@ func uninstallPackFromWorld(worldDir, uuid string) (InstalledPack, error) {
 
 	// Read the manifest's json file
 	manifestFullPath := filepath.Join(packInstallDir, "manifest.json")
-	data, err := os.ReadFile(manifestFullPath)
+	manifest, err := LoadManifestFromFile(manifestFullPath)
 	if err != nil {
 		// Do not fail if we can't read the manifest's true name/version
-		//return InstalledPack{}, fmt.Errorf("failed to read %q from installed manifest: %w", manifestFullPath, err)
-	}
-	if err == nil {
-		// Parse it as a AddonManifest pointer
-		manifest, parseErr := ParseManifest(data)
-		if parseErr != nil {
-			// Do not fail if we can't read the manifest's true name/version
-			//return InstalledPack{}, fmt.Errorf("invalid manifest %q in %q: %w", manifestFullPath, addonPath, err)
-		}
-		if parseErr == nil {
-			name = manifest.Header.Name
-			version = manifest.Header.Version
-		}
+		//return InstalledPack{}, fmt.Errorf("failed to load manifest: %w", err)
+	} else {
+		name = manifest.Header.Name
+		version = manifest.Header.Version
 	}
 
 	// Uninstall from the registry
@@ -173,14 +158,7 @@ func findPackInstallDirByUUID(worldDir, uuid string) (string, PackKind, error) {
 
 			manifestPath := filepath.Join(parent, e.Name(), "manifest.json")
 
-			// Read the pack's manifest.json file
-			data, err := os.ReadFile(manifestPath)
-			if err != nil {
-				continue
-			}
-
-			// Parse it as a AddonManifest pointer
-			manifest, err := ParseManifest(data)
+			manifest, err := LoadManifestFromFile(manifestPath)
 			if err != nil {
 				continue
 			}

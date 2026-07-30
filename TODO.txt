@@ -1,0 +1,7 @@
+- Implement ListInstalledPacks() in list.go & tests
+- Implement unit tests for fsutils.go
+- Rename worlddir.go to world.go ?
+- Create pack.go ?
+- Clarify APIs for getting `testdata` files and directories.
+- Create copyAddonFixture ?
+- Delete temporary directories creates during tests with copyServerFixture()

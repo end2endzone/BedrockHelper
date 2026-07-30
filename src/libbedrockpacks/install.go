@@ -59,16 +59,9 @@ func InstallAddon(addonPath string, serverDir string) ([]InstalledPack, error) {
 	for _, manifestRelPath := range targets {
 		manifestFullPath := filepath.Join(tempDir, filepath.FromSlash(manifestRelPath))
 
-		// Read the unzipped manifest's json file
-		data, err := os.ReadFile(manifestFullPath)
+		manifest, err := LoadManifestFromFile(manifestFullPath)
 		if err != nil {
-			return installed, fmt.Errorf("failed to read %q from extracted add-on: %w", manifestRelPath, err)
-		}
-
-		// Parse it as a AddonManifest pointer
-		manifest, err := ParseManifest(data)
-		if err != nil {
-			return installed, fmt.Errorf("invalid manifest %q in %q: %w", manifestRelPath, addonPath, err)
+			return installed, fmt.Errorf("failed to load manifest: %w", err)
 		}
 
 		// Identify its kind to know where to install

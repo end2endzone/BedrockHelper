@@ -3,10 +3,11 @@ package libbedrockpacks
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 )
 
-// ParseManifest parses the raw JSON bytes of a manifest.json file into an AddonManifest structure.
-func ParseManifest(data []byte) (*AddonManifest, error) {
+// LoadManifestFromBytes parses the raw JSON bytes of a manifest.json file as an AddonManifest structure.
+func LoadManifestFromBytes(data []byte) (*AddonManifest, error) {
 	var m AddonManifest
 	if err := json.Unmarshal(data, &m); err != nil {
 		return nil, fmt.Errorf("failed to parse manifest.json: %w", err)
@@ -15,6 +16,21 @@ func ParseManifest(data []byte) (*AddonManifest, error) {
 		return nil, fmt.Errorf("manifest.json is missing a header.uuid field")
 	}
 	return &m, nil
+}
+
+// LoadManifestFromFile loads a manifest.json data from a file path as an AddonManifest structure.
+func LoadManifestFromFile(path string) (*AddonManifest, error) {
+	// Read the manifest's json file
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read %q as a manifest: %w", path, err)
+	}
+
+	// Parse it as a AddonManifest pointer
+	var manifest *AddonManifest
+	manifest, err = LoadManifestFromBytes(data)
+
+	return manifest, err
 }
 
 // IdentifyPackKind inspects a AddonManifest sutrct to determines if the manifest matches a behavior pack or a resource pack.

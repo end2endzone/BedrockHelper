@@ -117,7 +117,7 @@ func TestReadZipEntry(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	m, err := ParseManifest(data)
+	m, err := LoadManifestFromBytes(data)
 	if err != nil {
 		t.Fatalf("failed to parse extracted manifest: %v", err)
 	}
