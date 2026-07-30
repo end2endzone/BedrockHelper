@@ -74,8 +74,30 @@ func (w World) RegisterPack(pack Pack) error {
 	return err
 }
 
+func (w World) UnregisterPack(pack Pack) error {
+	kind, err := pack.Kind()
+	if err != nil {
+		return err
+	}
+
+	registryFileName, err := kind.RegistryFileName()
+	if err != nil {
+		return err
+	}
+
+	registryFilePath := filepath.Join(w.Path, registryFileName)
+
+	err = UnregisterPackInRegistryFile(registryFilePath, pack.Manifest.Header.UUID, pack.Manifest.Header.Version)
+	return err
+}
+
 func (w World) InstallAddon(addonPath string) ([]*Pack, error) {
 	packs, err := InstallAddonInWorld(addonPath, w.Path)
+	return packs, err
+}
+
+func (w World) UninstallAddon(addonPath string) ([]*Pack, error) {
+	packs, err := UninstallAddonInWorld(addonPath, w.Path)
 	return packs, err
 }
 

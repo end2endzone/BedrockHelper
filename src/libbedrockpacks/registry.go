@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 )
 
@@ -122,6 +123,26 @@ func RegisterPackInRegistryFile(path string, uuid string, version Version) error
 		PackID:  uuid,
 		Version: version,
 	})
+
+	// Write the new entries to a registry file
+	return WriteRegistryFile(path, entries)
+}
+
+// UnregisterPackInRegistryFile removes a pack entry in the world registry file for the given pack kind.
+func UnregisterPackInRegistryFile(path string, uuid string, version Version) error {
+	entries, err := LoadRegistryFile(path)
+	if err != nil {
+		return err
+	}
+
+	// Search for the existing UUID pack, if found, remove it from the list
+	for i, e := range entries {
+		if strings.EqualFold(e.PackID, uuid) {
+			// Found. Remove it
+			entries = slices.Delete(entries, i, i+1)
+			continue
+		}
+	}
 
 	// Write the new entries to a registry file
 	return WriteRegistryFile(path, entries)

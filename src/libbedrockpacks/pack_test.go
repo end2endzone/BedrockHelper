@@ -56,7 +56,7 @@ func TestListInstalledPacks_AfterInstallAndUninstall(t *testing.T) {
 		t.Fatalf("expected 2 registered packs after install, got %d", len(packs))
 	}
 
-	_, err = UninstallAddon(getAddonFixturePath(t, "foobar.mcaddon"), tempServerDir)
+	_, err = UninstallAddonInServer(getAddonFixturePath(t, "foobar.mcaddon"), tempServerDir)
 	if err != nil {
 		t.Fatalf("uninstall failed: %v", err)
 	}

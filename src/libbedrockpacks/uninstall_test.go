@@ -14,7 +14,7 @@ func TestUninstallAddon(t *testing.T) {
 		t.Fatalf("setup install failed: %v", err)
 	}
 
-	uninstalledPacks, err := UninstallAddon(getAddonFixturePath(t, "foobar.mcaddon"), tempServerDir)
+	uninstalledPacks, err := UninstallAddonInServer(getAddonFixturePath(t, "foobar.mcaddon"), tempServerDir)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -44,7 +44,7 @@ func TestUninstallAddon_NotInstalled(t *testing.T) {
 	defer os.RemoveAll(tempServerDir)
 
 	// Never installed, so this should fail to find the pack in the world.
-	_, err := UninstallAddon(getAddonFixturePath(t, "foobar.mcaddon"), tempServerDir)
+	_, err := UninstallAddonInServer(getAddonFixturePath(t, "foobar.mcaddon"), tempServerDir)
 	if err == nil {
 		t.Fatal("expected error uninstalling a pack that was never installed, got nil")
 	}

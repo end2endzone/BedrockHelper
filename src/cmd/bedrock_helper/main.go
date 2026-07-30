@@ -166,7 +166,7 @@ func cmdUninstall(arg string, serverLocation string) error {
 	// Check if arg is a file path and exists
 	info, statErr := os.Stat(arg)
 	if statErr == nil && !info.IsDir() {
-		uninstalledPacks, err := lib.UninstallAddon(arg, serverLocation)
+		uninstalledPacks, err := lib.UninstallAddonInServer(arg, serverLocation)
 		if err != nil {
 			return err
 		}
