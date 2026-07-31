@@ -54,7 +54,7 @@ func TestUninstallPackByUUID(t *testing.T) {
 	tempServerDir := copyServerFixture(t, "server_with_installed_pack")
 	defer os.RemoveAll(tempServerDir)
 
-	pack, err := UninstallPackByUUID("2bda6085-9d71-4d8a-9b9f-74e07b30459c", tempServerDir)
+	pack, err := UninstallPackInServerByUUID("2bda6085-9d71-4d8a-9b9f-74e07b30459c", tempServerDir)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -80,7 +80,7 @@ func TestUninstallPackByUUID_UnknownUUID(t *testing.T) {
 	tempServerDir := copyServerFixture(t, "server_with_installed_pack")
 	defer os.RemoveAll(tempServerDir)
 
-	_, err := UninstallPackByUUID("00000000-0000-0000-0000-000000000000", tempServerDir)
+	_, err := UninstallPackInServerByUUID("00000000-0000-0000-0000-000000000000", tempServerDir)
 	if err == nil {
 		t.Fatal("expected error for unknown uuid, got nil")
 	}
@@ -98,7 +98,7 @@ func TestInstallThenUninstallByUUID(t *testing.T) {
 		t.Fatalf("expected 1 installed pack, got %d", len(installed))
 	}
 
-	pack, err := UninstallPackByUUID(installed[0].UUID, tempServerDir)
+	pack, err := UninstallPackInServerByUUID(installed[0].UUID, tempServerDir)
 	if err != nil {
 		t.Fatalf("uninstall by uuid failed: %v", err)
 	}

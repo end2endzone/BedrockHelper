@@ -177,7 +177,7 @@ func cmdUninstall(arg string, serverLocation string) error {
 	}
 
 	// otherwise treat it as a pack UUID.
-	pack, err := lib.UninstallPackByUUID(arg, serverLocation)
+	pack, err := lib.UninstallPackInServerByUUID(arg, serverLocation)
 	if err != nil {
 		return err
 	}

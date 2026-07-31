@@ -81,10 +81,10 @@ func UninstallAddonInServer(addonPath, serverDir string) ([]InstalledPack, error
 	return uninstalled, nil
 }
 
-// UninstallPackByUUID uninstalls a single pack, identified by a UUID
+// UninstallPackInServerByUUID uninstalls a single pack, identified by a UUID
 // from the Minecraft Bedrock server installed at serverDir.
 // This function is useful when the original add-on file is no longer available or has been deleted.
-func UninstallPackByUUID(uuid, serverDir string) (InstalledPack, error) {
+func UninstallPackInServerByUUID(uuid, serverDir string) (InstalledPack, error) {
 	server, err := GetServer(serverDir)
 	if err != nil {
 		return InstalledPack{}, err
