@@ -167,23 +167,215 @@ func (w World) UnregisterPack(pack *Pack) error {
 	return err
 }
 
+// InstallAddonInWorld installs every pack contained in the given add-on file (addonPath)
+// into the given Minecraft Bedrock world directory at worldDir.
+// Returns the list of packs that were installed.
+// Returns an error otherwise.
 func (w World) InstallAddon(addonPath string) ([]*Pack, error) {
-	packs, err := InstallAddonInWorld(addonPath, w.Path)
-	return packs, err
+	err := ValidateAddonFile(addonPath)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create a temporary directory to unzip the archive
+	tempDir, err := os.MkdirTemp("", "bedrock_helper_install_*")
+	if err != nil {
+		return nil, fmt.Errorf("failed to create temporary extraction directory: %w", err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	// Unzip
+	err = ExtractZip(addonPath, tempDir)
+	if err != nil {
+		return nil, err
+	}
+
+	// Load packs from the extracted archive
+	packs, err := LoadPacksFromSubdirectories(tempDir)
+	if err != nil {
+		return nil, err
+	}
+
+	// Install each packs into the world
+	var installed []*Pack
+	for _, pack := range packs {
+
+		newPack, err := w.InstallPack(pack)
+		if err != nil {
+			return nil, err
+		}
+
+		// The pack has installed succesfully
+		installed = append(installed, newPack)
+	}
+
+	return installed, nil
 }
 
+// InstallPackInWorld installs the given pack
+// into the given Minecraft Bedrock world directory at worldDir.
+// During the installation process, the pack's original directory is moved to a new location.
+// Returns the pack's updated information if installed succesfully.
+// Returns an error otherwise.
 func (w World) InstallPack(pack *Pack) (*Pack, error) {
-	installedPack, err := InstallPackInWorld(pack, w.Path)
-	return installedPack, err
+	// Get the pack's kind
+	kind, err := pack.Kind()
+	if err != nil {
+		return nil, err
+	}
+
+	// Get installation sub directory based on kind
+	kindSubDir, err := kind.InstallDirName()
+	if err != nil {
+		return nil, err
+	}
+
+	// Get the absolute path
+	packSourceDir := pack.Path
+	packsInstallDir := filepath.Join(w.Path, kindSubDir)
+	packTargetDir := filepath.Join(packsInstallDir, filepath.Base(pack.Path))
+
+	// Replace any existing install of the same pack directory name.
+	_, err = os.Stat(packTargetDir)
+	if err == nil {
+		// packTargetDir already exists
+		err := os.RemoveAll(packTargetDir)
+		if err != nil {
+			return nil, fmt.Errorf("failed to delete existing pack directory %q: %w", packTargetDir, err)
+		}
+	}
+
+	// Check for existing copy or an older version that would be already installed
+	existingPacks, err := LoadPacksFromSubdirectories(packsInstallDir)
+	if err == nil {
+		existingPacks := FilterPacksByUUID(existingPacks, pack.Manifest.Header.UUID)
+		for _, existingPack := range existingPacks {
+			// One or multiple existing version of this pack is already installed.
+			// Uninstall them first
+
+			_ /*uninstalledPack*/, err := w.UninstallPack(existingPack)
+			if err != nil {
+				return nil, fmt.Errorf("existing or older pack has failed to uninstall first %q: %w", existingPack.Path, err)
+			}
+		}
+	}
+
+	// Move the input pack directory to the server world's directory
+	err = moveDir(packSourceDir, packTargetDir)
+	if err != nil {
+		return nil, fmt.Errorf("failed to install pack %q: %w", pack.Name(), err)
+	}
+
+	// Build registry file path from worldDir and kind (`world_behavior_packs.json` or `world_resource_packs.json`)
+	registryFilePath, err := getRegistryFilePathFromWorldDirAndKind(w.Path, kind)
+	if err != nil {
+		return nil, err
+	}
+
+	// Register the pack in the right registry file.
+	err = RegisterPackInRegistryFile(registryFilePath, pack.Manifest.Header.UUID, pack.Manifest.Header.Version)
+	if err != nil {
+		return nil, fmt.Errorf("failed to register pack %q: %w", pack.Manifest.Header.Name, err)
+	}
+
+	// Parse the pack after installation to be sure we get its updated properties.
+	installedPack, err := LoadPackFromDirectory(packTargetDir)
+	if err != nil {
+		return nil, err
+	}
+
+	return installedPack, nil
 }
 
+// UninstallAddonInWorld uninstalls every pack contained in the given add-on file (addonPath)
+// from the given Minecraft Bedrock world directory at worldDir.
+// Returns the list of packs that were installed.
+// Returns an error otherwise.
 func (w World) UninstallAddon(addonPath string) ([]*Pack, error) {
-	packs, err := UninstallAddonInWorld(addonPath, w.Path)
-	return packs, err
+	err := ValidateAddonFile(addonPath)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create a temporary directory to unzip the archive
+	tempDir, err := os.MkdirTemp("", "bedrock_helper_install_*")
+	if err != nil {
+		return nil, fmt.Errorf("failed to create temporary extraction directory: %w", err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	// Unzip
+	err = ExtractZip(addonPath, tempDir)
+	if err != nil {
+		return nil, err
+	}
+
+	// Load packs from the extracted archive
+	packs, err := LoadPacksFromSubdirectories(tempDir)
+	if err != nil {
+		return nil, err
+	}
+
+	// Uninstall each packs from the world
+	var uninstalled []*Pack
+	for _, pack := range packs {
+
+		uninstalledPack, err := w.UninstallPack(pack)
+		if err != nil {
+			return nil, err
+		}
+
+		// The pack has installed succesfully
+		uninstalled = append(uninstalled, uninstalledPack)
+	}
+
+	return uninstalled, nil
 }
 
+// UninstallPackInWorld uninstalls the given pack
+// from the given Minecraft Bedrock world directory at worldDir.
 func (w World) UninstallPack(pack *Pack) (*Pack, error) {
-	uninstalledPack, err := UninstallPackInWorld(pack, w.Path)
+	// Get the pack's kind
+	kind, err := pack.Kind()
+	if err != nil {
+		return nil, err
+	}
+
+	// Get installation sub directory based on kind
+	kindSubDir, err := kind.InstallDirName()
+	if err != nil {
+		return nil, err
+	}
+
+	// Get the absolute path
+	//packSourceDir := pack.Path
+	packsInstallDir := filepath.Join(w.Path, kindSubDir)
+	packTargetDir := filepath.Join(packsInstallDir, filepath.Base(pack.Path))
+
+	// Build registry file path from worldDir and kind (`world_behavior_packs.json` or `world_resource_packs.json`)
+	registryFilePath, err := getRegistryFilePathFromWorldDirAndKind(w.Path, kind)
+	if err != nil {
+		return nil, err
+	}
+
+	// Unregister the pack in the right registry file.
+	err = UnregisterPackInRegistryFile(registryFilePath, pack.Manifest.Header.UUID, pack.Manifest.Header.Version)
+	if err != nil {
+		return nil, err
+	}
+
+	// Parse the pack before deletion to be able to return its updated properties.
+	uninstalledPack, err := LoadPackFromDirectory(packTargetDir)
+	if err != nil {
+		return nil, err
+	}
+
+	// Proceed with the directory deletion
+	err = os.RemoveAll(packTargetDir)
+	if err != nil {
+		return nil, fmt.Errorf("failed to remove pack directory %q: %w", packTargetDir, err)
+	}
+
 	return uninstalledPack, err
 }
 

@@ -20,6 +20,18 @@ func UninstallAddonInServer(addonPath, serverDir string) ([]InstalledPack, error
 		return nil, err
 	}
 
+	// Get the server at serverDir
+	server, err := GetServer(serverDir)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get the active world
+	activeWorld, err := server.ActiveWorld()
+	if err != nil {
+		return nil, err
+	}
+
 	manifestsPathsInAddon, err := FindManifestsRelativePathInAddon(addonPath)
 	if err != nil {
 		return nil, err
@@ -70,7 +82,7 @@ func UninstallAddonInServer(addonPath, serverDir string) ([]InstalledPack, error
 		pack := FindPackByUUID(installedPacks, packUUID)
 
 		// Uninstall this pack
-		uninstalledPack, err := UninstallPackInWorld(pack, worldDir)
+		uninstalledPack, err := activeWorld.UninstallPack(pack)
 		if err != nil {
 			return nil, err
 		}
@@ -128,96 +140,4 @@ func findInstalledPacksInWorld(worldDir string) ([]*Pack, error) {
 	}
 
 	return w.Packs()
-}
-
-// UninstallAddonInWorld uninstalls every pack contained in the given add-on file (addonPath)
-// from the given Minecraft Bedrock world directory at worldDir.
-// Returns the list of packs that were installed.
-// Returns an error otherwise.
-func UninstallAddonInWorld(addonPath string, worldDir string) ([]*Pack, error) {
-	err := ValidateAddonFile(addonPath)
-	if err != nil {
-		return nil, err
-	}
-
-	// Create a temporary directory to unzip the archive
-	tempDir, err := os.MkdirTemp("", "bedrock_helper_install_*")
-	if err != nil {
-		return nil, fmt.Errorf("failed to create temporary extraction directory: %w", err)
-	}
-	defer os.RemoveAll(tempDir)
-
-	// Unzip
-	err = ExtractZip(addonPath, tempDir)
-	if err != nil {
-		return nil, err
-	}
-
-	// Load packs from the extracted archive
-	packs, err := LoadPacksFromSubdirectories(tempDir)
-	if err != nil {
-		return nil, err
-	}
-
-	// Uninstall each packs from the world
-	var uninstalled []*Pack
-	for _, pack := range packs {
-
-		uninstalledPack, err := UninstallPackInWorld(pack, worldDir)
-		if err != nil {
-			return nil, err
-		}
-
-		// The pack has installed succesfully
-		uninstalled = append(uninstalled, uninstalledPack)
-	}
-
-	return uninstalled, nil
-}
-
-// UninstallPackInWorld uninstalls the given pack
-// from the given Minecraft Bedrock world directory at worldDir.
-func UninstallPackInWorld(pack *Pack, worldDir string) (*Pack, error) {
-	// Get the pack's kind
-	kind, err := pack.Kind()
-	if err != nil {
-		return nil, err
-	}
-
-	// Get installation sub directory based on kind
-	kindSubDir, err := kind.InstallDirName()
-	if err != nil {
-		return nil, err
-	}
-
-	// Get the absolute path
-	//packSourceDir := pack.Path
-	packsInstallDir := filepath.Join(worldDir, kindSubDir)
-	packTargetDir := filepath.Join(packsInstallDir, filepath.Base(pack.Path))
-
-	// Build registry file path from worldDir and kind (`world_behavior_packs.json` or `world_resource_packs.json`)
-	registryFilePath, err := getRegistryFilePathFromWorldDirAndKind(worldDir, kind)
-	if err != nil {
-		return nil, err
-	}
-
-	// Unregister the pack in the right registry file.
-	err = UnregisterPackInRegistryFile(registryFilePath, pack.Manifest.Header.UUID, pack.Manifest.Header.Version)
-	if err != nil {
-		return nil, err
-	}
-
-	// Parse the pack before deletion to be able to return its updated properties.
-	uninstalledPack, err := LoadPackFromDirectory(packTargetDir)
-	if err != nil {
-		return nil, err
-	}
-
-	// Proceed with the directory deletion
-	err = os.RemoveAll(packTargetDir)
-	if err != nil {
-		return nil, fmt.Errorf("failed to remove pack directory %q: %w", packTargetDir, err)
-	}
-
-	return uninstalledPack, err
 }

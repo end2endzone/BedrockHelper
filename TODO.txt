@@ -1,4 +1,4 @@
 - Change resolve and --resolve to --discover. Consider using a command line such as `--install --auto-discover-addons`
 - Remove struct such as `InstalledPack` and `RegisteredPack`.
-- Create commands.go which contains all the entry point from the main executable.
 - Rename library/package from `libbedrockpacks` to `libminecraftbedrock` 
+- Deleted temporary function `findInstalledPacksInWorld()`.
