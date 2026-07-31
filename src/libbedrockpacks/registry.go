@@ -15,6 +15,7 @@ type registryEntry struct {
 	Version Version `json:"version"`
 }
 
+/*
 // readRegistry reads the world registry file for the given pack kind.
 // A registry file contains a list of registryEntry.
 // If the file does not exist, an empty (not nil-error) list is returned.
@@ -27,6 +28,7 @@ func readRegistry(worldDir string, kind PackKind) ([]registryEntry, error) {
 	entries, err := LoadRegistryFile(path)
 	return entries, err
 }
+*/
 
 // LoadRegistryFile reads the world registry file.
 // A registry file contains a list of registryEntry.
@@ -55,6 +57,7 @@ func LoadRegistryFile(path string) ([]registryEntry, error) {
 	return entries, nil
 }
 
+/*
 // writeRegistry writes the world registry file for the given pack kind.
 func writeRegistry(worldDir string, kind PackKind, entries []registryEntry) error {
 	// Build registry file path from worldDir and kind
@@ -66,6 +69,7 @@ func writeRegistry(worldDir string, kind PackKind, entries []registryEntry) erro
 	err = WriteRegistryFile(path, entries)
 	return err
 }
+*/
 
 // WriteRegistryFile write the given registry entries the world registry file.
 // A registry file contains a list of registryEntry.
@@ -87,6 +91,7 @@ func WriteRegistryFile(path string, entries []registryEntry) error {
 	return nil
 }
 
+/*
 // registerPack adds (or updates) a pack entry in the world registry file for the given pack kind.
 // Registering an already-registered UUID updates its version.
 // It does not create duplicate the entry.
@@ -100,10 +105,10 @@ func registerPack(worldDir string, kind PackKind, uuid string, version Version) 
 	err = RegisterPackInRegistryFile(path, uuid, version)
 	return err
 }
+*/
 
-// RegisterPackInRegistryFile adds (or updates) a pack entry in the world registry file for the given pack kind.
-// Registering an already-registered UUID updates its version.
-// It does not create duplicate the entry.
+// RegisterPackInRegistryFile adds (or updates) a pack entry in the given world registry file.
+// Registering an already-registered pack updates the existing entry. It does not create duplicate the entry.
 func RegisterPackInRegistryFile(path string, uuid string, version Version) error {
 	entries, err := LoadRegistryFile(path)
 	if err != nil {
@@ -128,7 +133,9 @@ func RegisterPackInRegistryFile(path string, uuid string, version Version) error
 	return WriteRegistryFile(path, entries)
 }
 
-// UnregisterPackInRegistryFile removes a pack entry in the world registry file for the given pack kind.
+// UnregisterPackInRegistryFile removes a pack entry in the given world registry file.
+// Does not return an error if the given uuid is not already registered.
+// To know if a pack is actually registered, use IsPackRegisteredInRegistryFile().
 func UnregisterPackInRegistryFile(path string, uuid string, version Version) error {
 	entries, err := LoadRegistryFile(path)
 	if err != nil {
@@ -148,6 +155,26 @@ func UnregisterPackInRegistryFile(path string, uuid string, version Version) err
 	return WriteRegistryFile(path, entries)
 }
 
+// IsPackRegisteredInRegistryFile checks if a pack entry is registered in the given world registry file.
+// Returns an error if the registry file can not be loaded
+func IsPackRegisteredInRegistryFile(path string, uuid string, version Version) (bool, error) {
+	entries, err := LoadRegistryFile(path)
+	if err != nil {
+		return false, err
+	}
+
+	// Search for the existing UUID pack, if found, remove it from the list
+	for _, e := range entries {
+		if strings.EqualFold(e.PackID, uuid) {
+			// Found !
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+/*
 // unregisterPack removes a pack entry by UUID in the world registry file for the given pack kind.
 // Returns an error if the UUID was not found (expect the UUID must be removed).
 func unregisterPack(worldDir string, kind PackKind, uuid string) error {
@@ -174,6 +201,7 @@ func unregisterPack(worldDir string, kind PackKind, uuid string) error {
 	// Write the new entries to a registry file
 	return writeRegistry(worldDir, kind, filteredEntries)
 }
+*/
 
 func getSafeRegistryFileName(kind PackKind) string {
 	name, err := kind.RegistryFileName()

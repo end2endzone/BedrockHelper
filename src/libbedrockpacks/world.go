@@ -12,16 +12,48 @@ type World struct {
 	Path string
 }
 
+// Name returns the name of the World.
+// The name of a level is stored in file `levelname.txt`.
+// If this file is missing, the function fall back to using the directory name as the name of the world.
 func (w World) Name() (string, error) {
-	name, err := GetWorldName(w.Path)
-	return name, err
+	// Check for a levelname.txt
+	levelnamePath := filepath.Join(w.Path, "levelname.txt")
+	info, err := os.Stat(levelnamePath)
+	if err == nil && !info.IsDir() {
+		// File found!
+
+		// Read file content
+		data, err := os.ReadFile(levelnamePath)
+		if err == nil {
+			// Parse as UTF-8 string
+			name := string(data[:])
+			return name, nil
+		}
+	}
+
+	// Fall back to base directory name
+	name := filepath.Base(w.Path)
+	return name, nil
 }
 
+// PacksInstallDir provides the installation directory path for a given kind of packs.
 func (w World) PacksInstallDir(kind PackKind) (string, error) {
-	dir, err := GetWorldPacksInstallDir(w.Path, kind)
-	return dir, err
+	kindInstallDirName, err := kind.InstallDirName()
+	if err != nil {
+		return "", err
+	}
+
+	// Validate the output directory
+	packsDir := filepath.Join(w.Path, kindInstallDirName)
+	err = ValidateDirectory(packsDir)
+	if err != nil {
+		return "", err
+	}
+
+	return packsDir, nil
 }
 
+// PacksByKind returns the packs installed in this world that matches the given kind of pack.
 func (w World) PacksByKind(kind PackKind) ([]*Pack, error) {
 	var packs []*Pack
 
@@ -39,11 +71,13 @@ func (w World) PacksByKind(kind PackKind) ([]*Pack, error) {
 	return packs, nil
 }
 
+// Packs returns the packs installed in this world.
 func (w World) Packs() ([]*Pack, error) {
 	var packs []*Pack
 
 	// For each kind
 	for _, kind := range AllPackKinds {
+
 		// Get all the packs of this kind
 		newPacks, err := w.PacksByKind(kind)
 		if err != nil {
@@ -57,7 +91,48 @@ func (w World) Packs() ([]*Pack, error) {
 	return packs, nil
 }
 
-func (w World) RegisterPack(pack Pack) error {
+// PacksByKind searches the packs installed in this world and returns the pack that matches the given UUID.
+// Returns nil if the pack is not found (no error)
+func (w World) PacksByUUID(uuid string) (*Pack, error) {
+	var packs []*Pack
+
+	packs, err := w.Packs()
+	if err != nil {
+		return nil, err
+	}
+
+	// Is this pack our UUID target ?
+	for _, pack := range packs {
+		if strings.EqualFold(pack.Manifest.Header.UUID, uuid) {
+			// We found a match
+			return pack, nil
+		}
+	}
+
+	return nil, nil
+}
+
+// IsPackRegistered checks if the given pack is registered in the world.
+// Returns an error if the registry file can not be loaded
+func (w World) IsPackRegistered(pack *Pack) (bool, error) {
+	kind, err := pack.Kind()
+	if err != nil {
+		return false, err
+	}
+
+	registryFileName, err := kind.RegistryFileName()
+	if err != nil {
+		return false, err
+	}
+
+	registryFilePath := filepath.Join(w.Path, registryFileName)
+
+	registered, err := IsPackRegisteredInRegistryFile(registryFilePath, pack.Manifest.Header.UUID, pack.Manifest.Header.Version)
+	return registered, err
+}
+
+// RegisterPack registers the given pack in the world.
+func (w World) RegisterPack(pack *Pack) error {
 	kind, err := pack.Kind()
 	if err != nil {
 		return err
@@ -74,7 +149,8 @@ func (w World) RegisterPack(pack Pack) error {
 	return err
 }
 
-func (w World) UnregisterPack(pack Pack) error {
+// RegisterPack registers the given pack in the world.
+func (w World) UnregisterPack(pack *Pack) error {
 	kind, err := pack.Kind()
 	if err != nil {
 		return err
@@ -96,9 +172,19 @@ func (w World) InstallAddon(addonPath string) ([]*Pack, error) {
 	return packs, err
 }
 
+func (w World) InstallPack(pack *Pack) (*Pack, error) {
+	installedPack, err := InstallPackInWorld(pack, w.Path)
+	return installedPack, err
+}
+
 func (w World) UninstallAddon(addonPath string) ([]*Pack, error) {
 	packs, err := UninstallAddonInWorld(addonPath, w.Path)
 	return packs, err
+}
+
+func (w World) UninstallPack(pack *Pack) (*Pack, error) {
+	uninstalledPack, err := UninstallPackInWorld(pack, w.Path)
+	return uninstalledPack, err
 }
 
 // FindActiveWorldDir identifies the active world directory inside a Minecraft Bedrock server installation directory.
@@ -217,55 +303,4 @@ func readLevelName(propsPath string) (string, error) {
 
 	// not found
 	return "", nil
-}
-
-// GetWorldName get the name of a given world
-func GetWorldName(path string) (string, error) {
-	// Validate the given world directory
-	info, err := os.Stat(path)
-	if err != nil {
-		return "", fmt.Errorf("directory %q is not found: %w", path, err)
-	}
-	if !info.IsDir() {
-		return "", fmt.Errorf("not a directory: %q", path)
-	}
-
-	// Check for a levelname.txt
-	levelnamePath := filepath.Join(path, "levelname.txt")
-	info, err = os.Stat(levelnamePath)
-	if err == nil && !info.IsDir() {
-		// File found!
-
-		// Read file content
-		data, err := os.ReadFile(levelnamePath)
-		if err == nil {
-			// Parse as UTF-8 string
-			name := string(data[:])
-			return name, nil
-		}
-	}
-
-	// Fall back to base directory name
-	name := filepath.Base(path)
-	return name, nil
-}
-
-// GetWorldPacksInstallDir returns a world's packs installation directory for a given kind of pack
-func GetWorldPacksInstallDir(path string, kind PackKind) (string, error) {
-	worldDir := path
-
-	kindInstallDirName, err := kind.InstallDirName()
-	if err != nil {
-		return "", err
-	}
-
-	packsDir := filepath.Join(worldDir, kindInstallDirName)
-
-	// Validate the output directory
-	err = ValidateDirectory(packsDir)
-	if err != nil {
-		return "", err
-	}
-
-	return packsDir, nil
 }

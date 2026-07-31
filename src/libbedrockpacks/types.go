@@ -82,6 +82,27 @@ type RegisteredPack struct {
 	Version Version
 }
 
+// For backward compatibility
+func PackToInstalledPack(pack *Pack) *InstalledPack {
+	return &InstalledPack{
+		UUID:      pack.Manifest.Header.UUID,
+		Name:      pack.Name(),
+		Kind:      pack.KindSafe(),
+		Version:   pack.Manifest.Header.Version,
+		Directory: pack.Path,
+	}
+}
+
+// For backward compatibility
+func PackToRegisteredPack(pack *Pack) *RegisteredPack {
+	return &RegisteredPack{
+		UUID:    pack.Manifest.Header.UUID,
+		Name:    pack.Name(),
+		Kind:    pack.KindSafe(),
+		Version: pack.Manifest.Header.Version,
+	}
+}
+
 // Header mirrors the "header" object of a Minecraft Bedrock manifest.json.
 type Header struct {
 	Name             string  `json:"name"`

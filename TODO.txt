@@ -1,1 +1,2 @@
-- Create pack.go ?
+- Change resolve and --resolve to --discover. Consider using a command line such as `--install --auto-discover-addons`
+- Remove struct such as `InstalledPack` and `RegisteredPack`.

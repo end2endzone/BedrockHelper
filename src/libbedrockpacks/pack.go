@@ -21,6 +21,15 @@ func (p Pack) Kind() (PackKind, error) {
 	return kind, nil
 }
 
+func (p Pack) KindSafe() PackKind {
+	kind, err := IdentifyPackKind(p.Manifest)
+	if err != nil {
+		return UnknownPack
+	}
+
+	return kind
+}
+
 func (p Pack) Name() string {
 	return p.Manifest.Header.Name
 }
@@ -44,45 +53,40 @@ func (p Pack) Description() string {
 // For each registered UUID, it attempts to resolve the name of the pack by scanning the corresponding behavior_packs/ or
 // resource_packs/ directories for a matching manifest.json.
 func ListInstalledPacks(serverDir string) ([]RegisteredPack, error) {
-	err := ValidateServerDirectory(serverDir)
+	server, err := GetServer(serverDir)
 	if err != nil {
 		return nil, err
 	}
 
-	// Find active world directory
-	worldDir, err := FindActiveWorldDir(serverDir)
+	activeWorld, err := server.ActiveWorld()
 	if err != nil {
 		return nil, err
 	}
 
-	// For each registry files
+	packs, err := activeWorld.Packs()
+	if err != nil {
+		return nil, err
+	}
+
+	// For each pack, resolve its properties (name, uuid, etc)
 	var results []RegisteredPack
-	for _, kind := range AllPackKinds {
-		registryEntries, err := readRegistry(worldDir, kind)
-		if err != nil {
-			return nil, err
+	for _, pack := range packs {
+
+		registeredPack := RegisteredPack{
+			UUID:    pack.Manifest.Header.UUID,
+			Name:    pack.Name(),
+			Kind:    pack.KindSafe(),
+			Version: pack.Manifest.Header.Version,
 		}
 
-		uuid2names := getPackNamesByUUIDMap(worldDir, kind)
-
-		// For each registry entry in register files
-		for _, e := range registryEntries {
-			name := uuid2names[strings.ToLower(e.PackID)]
-			if name == "" {
-				name = "<unknown - pack files missing>"
-			}
-			results = append(results, RegisteredPack{
-				UUID:    e.PackID,
-				Name:    name,
-				Kind:    kind,
-				Version: e.Version,
-			})
-		}
+		// add to our results
+		results = append(results, registeredPack)
 	}
 
 	return results, nil
 }
 
+/*
 // getPackNamesByUUIDMap scans a world's install directory to find all installed packs and
 // returns a map of uuid (in lowercase) -> pack display name.
 func getPackNamesByUUIDMap(worldDir string, kind PackKind) map[string]string {
@@ -120,7 +124,11 @@ func getPackNamesByUUIDMap(worldDir string, kind PackKind) map[string]string {
 
 	return uuid2names
 }
+*/
 
+// LoadPackFromDirectory loads a pack stored in the given directory.
+// The given directory path must contains a manifest.json file to be a valid pack.
+// Returns a valid pack or an error otherwise.
 func LoadPackFromDirectory(path string) (*Pack, error) {
 	manifestFullPath := filepath.Join(path, "manifest.json")
 
@@ -137,6 +145,11 @@ func LoadPackFromDirectory(path string) (*Pack, error) {
 	return pack, nil
 }
 
+// LoadPacksFromSubdirectories browse the subdirectories of the given directory.
+// For each subdir found, it tries to load a pack from this subdir.
+// All sub directories must be a valid pack directory, otherwise the function returns an error.
+// Returns a valid list of packs. Returns an empty list if there are no subdirectories.
+// Returns an error otherwise.
 func LoadPacksFromSubdirectories(path string) ([]*Pack, error) {
 	var packs []*Pack
 
@@ -159,4 +172,41 @@ func LoadPacksFromSubdirectories(path string) ([]*Pack, error) {
 	}
 
 	return packs, nil
+}
+
+// FindPackByUUID searches a given list of packs for a pack with the given UUID.
+func FindPackByUUID(packs []*Pack, uuid string) *Pack {
+	for _, pack := range packs {
+		if strings.EqualFold(pack.Manifest.Header.UUID, uuid) {
+			// This is the pack we are looking for
+			return pack
+		}
+	}
+	return nil
+}
+
+// FilterPacksByUUID filters a given list of packs by UUID.
+// There should not be multiple packs with the same UUID in the same list.
+// This function is mostly for cleanup and integrity.
+func FilterPacksByUUID(packs []*Pack, uuid string) []*Pack {
+	var results []*Pack
+	for _, pack := range packs {
+		if strings.EqualFold(pack.Manifest.Header.UUID, uuid) {
+			// Match !
+			results = append(results, pack)
+		}
+	}
+	return results
+}
+
+// FilterPacksByKind filters a given list of packs by PackKind.
+func FilterPacksByKind(packs []*Pack, kind PackKind) []*Pack {
+	var results []*Pack
+	for _, pack := range packs {
+		if pack.KindSafe() == kind {
+			// Match !
+			results = append(results, pack)
+		}
+	}
+	return results
 }
