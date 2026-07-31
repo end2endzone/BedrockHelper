@@ -65,44 +65,6 @@ func (v Version) String() string {
 	return fmt.Sprintf("%d.%d.%d", v[0], v[1], v[2])
 }
 
-// InstalledPack describes a pack that was installed, discovered or resolved to its on-disk location.
-type InstalledPack struct {
-	UUID      string
-	Name      string
-	Kind      PackKind
-	Version   Version
-	Directory string // for packs inside an addon or installed in a server
-}
-
-// RegisteredPack describes an entry found in a world registry file.
-type RegisteredPack struct {
-	UUID    string
-	Name    string // optionnal
-	Kind    PackKind
-	Version Version
-}
-
-// For backward compatibility
-func PackToInstalledPack(pack *Pack) *InstalledPack {
-	return &InstalledPack{
-		UUID:      pack.Manifest.Header.UUID,
-		Name:      pack.Name(),
-		Kind:      pack.KindSafe(),
-		Version:   pack.Manifest.Header.Version,
-		Directory: pack.Path,
-	}
-}
-
-// For backward compatibility
-func PackToRegisteredPack(pack *Pack) *RegisteredPack {
-	return &RegisteredPack{
-		UUID:    pack.Manifest.Header.UUID,
-		Name:    pack.Name(),
-		Kind:    pack.KindSafe(),
-		Version: pack.Manifest.Header.Version,
-	}
-}
-
 // Header mirrors the "header" object of a Minecraft Bedrock manifest.json.
 type Header struct {
 	Name             string  `json:"name"`

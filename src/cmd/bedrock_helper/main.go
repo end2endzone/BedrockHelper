@@ -154,7 +154,7 @@ func cmdInstall(addonPath string, serverLocation string) error {
 		return err
 	}
 	for _, p := range installedPacks {
-		fmt.Printf("Installed %s (%s) [%s] uuid=%s -> %s\n", p.Name, p.Kind, p.Version, p.UUID, p.Directory)
+		fmt.Printf("Installed %s\n", p.Description())
 	}
 	return nil
 }
@@ -171,7 +171,7 @@ func cmdUninstall(arg string, serverLocation string) error {
 			return err
 		}
 		for _, pack := range uninstalledPacks {
-			fmt.Printf("Uninstalled %s (%s) uuid=%s\n", pack.Name, pack.Kind, pack.UUID)
+			fmt.Printf("Uninstalled %s\n", pack.Description())
 		}
 		return nil
 	}
@@ -181,7 +181,7 @@ func cmdUninstall(arg string, serverLocation string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Uninstalled %s (%s) uuid=%s\n", pack.Name, pack.Kind, pack.UUID)
+	fmt.Printf("Uninstalled %s\n", pack.Description())
 	return nil
 }
 
@@ -219,7 +219,7 @@ func cmdListAddons(serverLocation string) error {
 	w := tabwriter.NewWriter(os.Stdout, 0, 4, 2, ' ', 0)
 	fmt.Fprintln(w, "KIND\tNAME\tVERSION\tUUID")
 	for _, p := range packs {
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", p.Kind, p.Name, p.Version, p.UUID)
+		fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", p.KindSafe(), p.Name(), p.Manifest.Header.Version, p.Manifest.Header.UUID)
 	}
 	return w.Flush()
 }
