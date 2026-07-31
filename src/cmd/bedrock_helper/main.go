@@ -15,7 +15,7 @@ const usageText = `bedrock_helper - install and manage Minecraft Bedrock add-on 
 Usage:
   bedrock_helper --install <path> [--server-location <dir>]
   bedrock_helper --uninstall <path-or-uuid> [--server-location <dir>]
-  bedrock_helper --find-addons
+  bedrock_helper --find-addons <path>
   bedrock_helper --list-addons [--server-location <dir>]
   bedrock_helper --resolve-pack <uuid> [--server-location <dir>]
   bedrock_helper --install-all [--server-location <dir>]
@@ -26,10 +26,10 @@ Flags:
   --install <path>           Install the .mcaddon/.mcpack/.zip add-on at <path>.
   --uninstall <path|uuid>    Uninstall the add-on at <path>, or by pack UUID
                              if the original add-on file is unavailable.
-  --find-addons              Search the current directory (recursively) for
-                             files that look like add-on packs and list them.
+  --find-addons <path>       Search the directory at <path> recursively for
+  							 files that look like add-on packs and list them.
   --list-addons              List the add-on packs currently registered for
-                             the target server, resolving each UUID to a name.
+                             the target server.
   --resolve-pack <uuid>      Search the target server for an add-on file that
                              contains a pack matching <uuid>.
   --install-all              Scan the target server directory for add-on
@@ -63,7 +63,7 @@ func run(args []string) int {
 	var (
 		installPath    string
 		uninstallArg   string
-		findAddons     bool
+		findAddons     string
 		listAddons     bool
 		resolvePack    string
 		installAll     bool
@@ -73,7 +73,7 @@ func run(args []string) int {
 
 	fs.StringVar(&installPath, "install", "", "install an add-on pack file")
 	fs.StringVar(&uninstallArg, "uninstall", "", "uninstall an add-on pack file or pack UUID")
-	fs.BoolVar(&findAddons, "find-addons", false, "find add-on files in the current directory")
+	fs.StringVar(&findAddons, "find-addons", "", "find add-on files in the given directory or current directory")
 	fs.BoolVar(&listAddons, "list-addons", false, "list add-ons registered for the server")
 	fs.StringVar(&resolvePack, "resolve-pack", "", "resolve a pack UUID to an add-on file")
 	fs.BoolVar(&installAll, "install-all", false, "install every add-on found on the server")
@@ -105,7 +105,7 @@ func run(args []string) int {
 
 	// Count how many commands are specified in the arguments
 	commandsSet := 0
-	for _, set := range []bool{installPath != "", uninstallArg != "", findAddons, listAddons, resolvePack != "", installAll, uninstallAll} {
+	for _, set := range []bool{installPath != "", uninstallArg != "", findAddons != "", listAddons, resolvePack != "", installAll, uninstallAll} {
 		if set {
 			commandsSet++
 		}
@@ -127,8 +127,8 @@ func run(args []string) int {
 		err = cmdInstall(installPath, serverLocation)
 	case uninstallArg != "":
 		err = cmdUninstall(uninstallArg, serverLocation)
-	case findAddons:
-		err = cmdFindAddons()
+	case findAddons != "":
+		err = cmdFindAddons(findAddons)
 	case listAddons:
 		err = cmdListAddons(serverLocation)
 	case resolvePack != "":
@@ -185,15 +185,9 @@ func cmdUninstall(arg string, serverLocation string) error {
 	return nil
 }
 
-// cmdFindAddons search the current directory recursively for files that look like add-on packs and list them.
-func cmdFindAddons() error {
-	// Get current working directory
-	cwd, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-
-	addons, err := lib.FindAddonsInDir(cwd, true)
+// cmdFindAddons search the given directory recursively for files that look like add-on packs and list them.
+func cmdFindAddons(findAddons string) error {
+	addons, err := lib.FindAddonsInDir(findAddons, true)
 	if err != nil {
 		return err
 	}
