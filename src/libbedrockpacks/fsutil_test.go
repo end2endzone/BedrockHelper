@@ -16,9 +16,9 @@ func TestSanitizePackDirName(t *testing.T) {
 		"Path\\With*Bad?Chars": "Path_With_Bad_Chars",
 	}
 	for in, want := range cases {
-		got := sanitizePackDirName(in)
+		got := sanitizeCharactersInPath(in)
 		if got != want {
-			t.Errorf("sanitizePackDirName(%q) = %q, want %q", in, got, want)
+			t.Errorf("sanitizeCharactersInPath(%q) = %q, want %q", in, got, want)
 		}
 	}
 }

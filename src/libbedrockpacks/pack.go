@@ -35,7 +35,7 @@ func (p Pack) Name() string {
 }
 
 func (p Pack) NameSanitized() string {
-	dirName := sanitizePackDirName(p.Manifest.Header.Name)
+	dirName := sanitizeCharactersInPath(p.Manifest.Header.Name)
 	return dirName
 }
 
@@ -85,46 +85,6 @@ func ListInstalledPacks(serverDir string) ([]RegisteredPack, error) {
 
 	return results, nil
 }
-
-/*
-// getPackNamesByUUIDMap scans a world's install directory to find all installed packs and
-// returns a map of uuid (in lowercase) -> pack display name.
-func getPackNamesByUUIDMap(worldDir string, kind PackKind) map[string]string {
-	uuid2names := make(map[string]string)
-
-	// Get kind's sub directory
-	kindSubdirName, err := kind.InstallDirName()
-	if err != nil {
-		return uuid2names
-	}
-	kindDir := filepath.Join(worldDir, kindSubdirName)
-
-	// Get packs for this kind
-	packDirs, err := os.ReadDir(kindDir)
-	if err != nil {
-		return uuid2names
-	}
-
-	// For each packs
-	for _, e := range packDirs {
-		if !e.IsDir() {
-			continue
-		}
-
-		// Load its manifest
-		manifestFullPath := filepath.Join(kindDir, e.Name(), "manifest.json")
-		manifest, err := LoadManifestFromFile(manifestFullPath)
-		if err != nil {
-			continue
-		}
-
-		// add its name to the map
-		uuid2names[strings.ToLower(manifest.Header.UUID)] = manifest.Header.Name
-	}
-
-	return uuid2names
-}
-*/
 
 // LoadPackFromDirectory loads a pack stored in the given directory.
 // The given directory path must contains a manifest.json file to be a valid pack.

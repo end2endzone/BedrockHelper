@@ -82,7 +82,7 @@ func InstallAddonInServer(addonPath string, serverDir string) ([]InstalledPack, 
 			return installed, fmt.Errorf("failed to create %q: %w", targetParent, err)
 		}
 
-		dirName := sanitizePackDirName(manifest.Header.Name)
+		dirName := sanitizeCharactersInPath(manifest.Header.Name)
 		packTargetInstallDir := filepath.Join(targetParent, dirName)
 
 		// Replace any existing install of the same pack directory name.

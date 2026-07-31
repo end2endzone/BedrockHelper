@@ -68,9 +68,9 @@ func copyDir(src, dst string) error {
 	})
 }
 
-// sanitizePackDirName converts a pack's display name into a filesystem-safe directory name.
+// sanitizeCharactersInPath converts the given string into a filesystem-safe directory name or file name.
 // Characters that are not supported by filesystems are replaeced by an underscore.
-func sanitizePackDirName(name string) string {
+func sanitizeCharactersInPath(name string) string {
 	if strings.TrimSpace(name) == "" {
 		return "pack"
 	}
