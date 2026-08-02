@@ -90,7 +90,8 @@ func RegisterPackInRegistryFile(path string, uuid string, version Version) error
 
 // UnregisterPackInRegistryFile removes a pack entry in the given world registry file.
 // Does not return an error if the given uuid is not already registered.
-// To know if a pack is actually registered, use IsPackRegisteredInRegistryFile().
+// To know if a pack is actually unregistered, use IsPackRegisteredInRegistryFile()
+// before and after the call which is expensive.
 func UnregisterPackInRegistryFile(path string, uuid string, version Version) error {
 	entries, err := LoadRegistryFile(path)
 	if err != nil {

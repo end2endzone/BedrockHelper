@@ -81,7 +81,7 @@ func (w World) Packs() ([]*Pack, error) {
 		// Get all the packs of this kind
 		newPacks, err := w.PacksByKind(kind)
 		if err != nil {
-			return packs, err
+			continue // continue to prevent failing if a "kind" directory is not found in this world
 		}
 
 		// keep these packs in the slice
@@ -149,7 +149,7 @@ func (w World) RegisterPack(pack *Pack) error {
 	return err
 }
 
-// RegisterPack registers the given pack in the world.
+// UnregisterPack unregisters the given pack in the world.
 func (w World) UnregisterPack(pack *Pack) error {
 	kind, err := pack.Kind()
 	if err != nil {
@@ -191,7 +191,7 @@ func (w World) InstallAddon(addonPath string) ([]*Pack, error) {
 	}
 
 	// Load packs from the extracted archive
-	packs, err := LoadPacksFromSubdirectories(tempDir)
+	packs, err := LoadAllPacksFromDirectoriesOrSubdirectories(tempDir)
 	if err != nil {
 		return nil, err
 	}

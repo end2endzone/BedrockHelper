@@ -1,9 +1,27 @@
 package libbedrockpacks
 
 import (
+	"fmt"
+	"os"
 	"path/filepath"
 	"testing"
 )
+
+// getWorld is an internal testing function to get a director World pointer without a server while in tests.
+func getWorld(path string) (*World, error) {
+	info, err := os.Stat(path)
+	if err != nil {
+		return nil, fmt.Errorf("world directory %q does not exist: %w", path, err)
+	}
+	if !info.IsDir() {
+		return nil, fmt.Errorf("world path is not a directory: %q", path)
+	}
+
+	world := &World{
+		Path: path,
+	}
+	return world, nil
+}
 
 func TestFindActiveWorldDir(t *testing.T) {
 	cases := []struct {

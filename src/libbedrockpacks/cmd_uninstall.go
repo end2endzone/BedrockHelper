@@ -1,5 +1,7 @@
 package libbedrockpacks
 
+import "fmt"
+
 // UninstallAddonInServer uninstalls every pack contained in the add-on file at the given addonPath
 // from the Minecraft Bedrock server installed at serverDir.
 // It returns the list of packs that were uninstalled or an error.
@@ -49,6 +51,9 @@ func UninstallPackInServerByUUID(uuid, serverDir string) (*Pack, error) {
 
 	// Find the specific pack to uninstall
 	pack := FindPackByUUID(packs, uuid)
+	if pack == nil {
+		return nil, fmt.Errorf("no pack installed with UUID: %q", uuid)
+	}
 
 	// Do the uninstall
 	uninstalledPack, err := activeWorld.UninstallPack(pack)

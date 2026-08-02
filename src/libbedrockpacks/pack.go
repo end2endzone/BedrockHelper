@@ -2,6 +2,7 @@ package libbedrockpacks
 
 import (
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -39,6 +40,10 @@ func (p Pack) NameSanitized() string {
 	return dirName
 }
 
+func (p Pack) UUID() string {
+	return p.Manifest.Header.UUID
+}
+
 func (p Pack) Description() string {
 	safeKind, err := p.Kind()
 	if err != nil {
@@ -58,7 +63,7 @@ func LoadPackFromDirectory(path string) (*Pack, error) {
 	// Load its manifest
 	manifest, err := LoadManifestFromFile(manifestFullPath)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to read a pack from directory: %q, got error %v", path, err)
 	}
 
 	pack := &Pack{
@@ -68,8 +73,7 @@ func LoadPackFromDirectory(path string) (*Pack, error) {
 	return pack, nil
 }
 
-// LoadPacksFromSubdirectories browse the subdirectories of the given directory.
-// For each subdir found, it tries to load a pack from this subdir.
+// LoadPacksFromSubdirectories browse the sub directories from the given directory and loads a pack from each subdir.
 // All sub directories must be a valid pack directory, otherwise the function returns an error.
 // Returns a valid list of packs. Returns an empty list if there are no subdirectories.
 // Returns an error otherwise.
@@ -79,10 +83,11 @@ func LoadPacksFromSubdirectories(path string) ([]*Pack, error) {
 	// Get all the sub directories
 	entries, err := os.ReadDir(path)
 	if err != nil {
-		return packs, fmt.Errorf("failed to read packs from directory: %w", err)
+		return nil, fmt.Errorf("failed to read multiple packs from directory: %q, got error %v", path, err)
 	}
 	for _, e := range entries {
 		if e.IsDir() {
+
 			// Parse pack at this directory
 			packDir := filepath.Join(path, e.Name())
 			pack, err := LoadPackFromDirectory(packDir)
@@ -94,6 +99,67 @@ func LoadPacksFromSubdirectories(path string) ([]*Pack, error) {
 		}
 	}
 
+	return packs, nil
+}
+
+// LoadAllPacksFromDirectoriesOrSubdirectories recursively traverses the given directory to detect and load directories containing Packs.
+// This function is compatible with `.mcpack` and `.mcaddon` files.
+// Extension `.mcpack`  have a manifest.json file at the root directory.
+// Extension `.mcaddon` have a manifest.json file in each sub directory.
+// Returns an error if a directory containing a manifest.json which fails to load as a pack.
+// Returns am empty pack list when no manifest.json files is found
+func LoadAllPacksFromDirectoriesOrSubdirectories(root string) ([]*Pack, error) {
+	var packs []*Pack
+
+	/*
+		// Try to load a pack at the root directory
+		rootPack, err1 := LoadPackFromDirectory(path)
+		if err1 == nil {
+			// success for the root directory
+			packs = append(packs, rootPack)
+			return packs, nil
+		}
+
+		// Try to fallback to loading packs from each subdirectories
+		packs, err2 := LoadPacksFromSubdirectories(path)
+		if err2 == nil {
+			// success for the sub directories
+			return packs, nil
+		}
+	*/
+
+	err := filepath.WalkDir(root, func(path string, dir fs.DirEntry, err error) error {
+		// If there is an error accessing a path, return it to stop walking
+		if err != nil {
+			return err
+		}
+
+		// Ignore files entirely
+		if !dir.IsDir() {
+			return nil
+		}
+
+		// Does directory contains a manifest.json file ?
+		manifestPath := filepath.Join(path, "manifest.json")
+		if fileExists(manifestPath) {
+			// This directory contains a manifest, load this directory as a pack.
+			pack, err := LoadPackFromDirectory(path)
+			if err != nil {
+				// Pack failed to load
+				return err
+			}
+
+			packs = append(packs, pack)
+		}
+		return nil
+	})
+
+	if err != nil {
+		// An error occured while walking the directories
+		return nil, fmt.Errorf("failed to detect packs from directory: %q, got %v", root, err)
+	}
+
+	// Success
 	return packs, nil
 }
 

@@ -58,29 +58,3 @@ func TestMoveDir(t *testing.T) {
 		t.Errorf("nested/inner.txt = %q, %v; want %q, nil", data, err, "world")
 	}
 }
-
-func TestFindPackDirByUUID(t *testing.T) {
-	tempServerDir := copyServerFixture(t, "server_with_installed_pack")
-	defer os.RemoveAll(tempServerDir)
-
-	worldDir, err := FindActiveWorldDir(tempServerDir)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	dir, kind, err := findPackInstallDirByUUID(worldDir, "2bda6085-9d71-4d8a-9b9f-74e07b30459c")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if kind != BehaviorPack {
-		t.Errorf("kind = %v, want BehaviorPack", kind)
-	}
-	if filepath.Base(dir) != "Foobar BP" {
-		t.Errorf("dir = %q, want basename %q", dir, "Foobar BP")
-	}
-
-	_, _, err = findPackInstallDirByUUID(worldDir, "00000000-0000-0000-0000-000000000000")
-	if err == nil {
-		t.Fatal("expected error for unknown uuid, got nil")
-	}
-}

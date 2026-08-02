@@ -1,10 +1,83 @@
 package libbedrockpacks
 
 import (
-	"os"
 	"path/filepath"
 	"testing"
 )
+
+func makePack(path string, name string, kind PackKind, uuid string, version Version) *Pack {
+	pack := &Pack{
+		Path: path,
+		Manifest: &AddonManifest{
+			Header: Header{
+				Name:    name,
+				UUID:    uuid,
+				Version: version,
+			},
+		},
+	}
+
+	switch kind {
+	case BehaviorPack:
+		pack.Manifest.Modules = []Module{
+			{
+				Type: "data",
+			},
+			{
+				Type: "string",
+			},
+		}
+	case ResourcePack:
+		pack.Manifest.Modules = []Module{
+			{
+				Type: "resources",
+			},
+		}
+	default:
+	}
+
+	return pack
+}
+
+func registerPack(worldDir string, kind PackKind, uuid string, version Version) error {
+	w, err := getWorld(worldDir)
+	if err != nil {
+		return err
+	}
+
+	pack := makePack("/tmp/registerPack", "temporary pack for registerPack", kind, uuid, version)
+	err = w.RegisterPack(pack)
+
+	return err
+}
+
+func unregisterPack(worldDir string, kind PackKind, uuid string) error {
+	w, err := getWorld(worldDir)
+	if err != nil {
+		return err
+	}
+
+	pack := makePack("/tmp/registerPack", "temporary pack for registerPack", kind, uuid, Version{0, 0, 0})
+	err = w.UnregisterPack(pack)
+
+	return err
+}
+
+func readRegistry(worldDir string, kind PackKind) ([]registryEntry, error) {
+	w, err := getWorld(worldDir)
+	if err != nil {
+		return nil, err
+	}
+
+	// Build registry file path from worldDir and kind (`world_behavior_packs.json` or `world_resource_packs.json`)
+	registryFilePath, err := getRegistryFilePathFromWorldDirAndKind(w.Path, kind)
+	if err != nil {
+		return nil, err
+	}
+
+	entries, err := LoadRegistryFile(registryFilePath)
+	return entries, err
+}
 
 func TestRegistryRoundTrip(t *testing.T) {
 	worldDir := t.TempDir()
@@ -79,8 +152,8 @@ func TestRegistryRoundTrip(t *testing.T) {
 	}
 
 	err = unregisterPack(worldDir, BehaviorPack, uuid1)
-	if err == nil {
-		t.Fatal("expected error unregistering an already-removed uuid, got nil")
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
 	}
 }
 
@@ -101,9 +174,4 @@ func TestRegistryFileNames(t *testing.T) {
 	if !fileExists(filepath.Join(worldDir, "world_resource_packs.json")) {
 		t.Error("expected world_resource_packs.json to exist")
 	}
-}
-
-func fileExists(path string) bool {
-	_, err := os.Stat(path)
-	return err == nil
 }

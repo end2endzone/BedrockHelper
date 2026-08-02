@@ -21,10 +21,10 @@ func TestInstallAddon_Bundle(t *testing.T) {
 
 	var kinds []string
 	for _, pack := range installedPacks {
-		kinds = append(kinds, pack.Kind.String())
-		_, err := os.Stat(filepath.Join(pack.Directory, "manifest.json"))
+		kinds = append(kinds, pack.KindSafe().String())
+		_, err := os.Stat(filepath.Join(pack.Path, "manifest.json"))
 		if err != nil {
-			t.Errorf("expected manifest.json at %q: %v", pack.Directory, err)
+			t.Errorf("expected manifest.json at %q: %v", pack.Path, err)
 		}
 	}
 
@@ -46,7 +46,7 @@ func TestInstallAddon_Bundle(t *testing.T) {
 
 	// The master link manifest.json must NOT itself be treated as an installed pack.
 	for _, p := range installedPacks {
-		if p.Name == "Foobar Addon" {
+		if p.Name() == "Foobar Addon" {
 			t.Errorf("master link manifest should not be installed as a pack: %v", p)
 		}
 	}
@@ -64,11 +64,11 @@ func TestInstallAddon_StandaloneMcpack(t *testing.T) {
 		t.Fatalf("expected 1 pack installedPacks, got %d", len(installedPacks))
 	}
 
-	if installedPacks[0].Kind != ResourcePack {
-		t.Errorf("Kind = %v, want ResourcePack", installedPacks[0].Kind)
+	if installedPacks[0].KindSafe() != ResourcePack {
+		t.Errorf("Kind = %v, want ResourcePack", installedPacks[0].KindSafe())
 	}
-	if installedPacks[0].Name != "Solo RP" {
-		t.Errorf("Name = %q, want %q", installedPacks[0].Name, "Solo RP")
+	if installedPacks[0].Name() != "Solo RP" {
+		t.Errorf("Name = %q, want %q", installedPacks[0].Name(), "Solo RP")
 	}
 }
 

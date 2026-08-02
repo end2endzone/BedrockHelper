@@ -16,14 +16,14 @@ func TestListInstalledPacks(t *testing.T) {
 	if len(packs) != 1 {
 		t.Fatalf("expected 1 registered pack, got %d: %+v", len(packs), packs)
 	}
-	if packs[0].UUID != "2bda6085-9d71-4d8a-9b9f-74e07b30459c" {
-		t.Errorf("UUID = %q, want the registered uuid", packs[0].UUID)
+	if packs[0].UUID() != "2bda6085-9d71-4d8a-9b9f-74e07b30459c" {
+		t.Errorf("UUID = %q, want the registered uuid", packs[0].UUID())
 	}
-	if packs[0].Name != "Foobar BP" {
-		t.Errorf("Name = %q, want %q (resolved from installed manifest.json)", packs[0].Name, "Foobar BP")
+	if packs[0].Name() != "Foobar BP" {
+		t.Errorf("Name = %q, want %q (resolved from installed manifest.json)", packs[0].Name(), "Foobar BP")
 	}
-	if packs[0].Kind != BehaviorPack {
-		t.Errorf("Kind = %v, want BehaviorPack", packs[0].Kind)
+	if packs[0].KindSafe() != BehaviorPack {
+		t.Errorf("Kind = %v, want BehaviorPack", packs[0].KindSafe())
 	}
 }
 

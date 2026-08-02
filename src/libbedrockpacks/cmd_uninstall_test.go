@@ -32,9 +32,9 @@ func TestUninstallAddon(t *testing.T) {
 
 	// Assert that each uninstalled pack's directory were deleted
 	for _, p := range uninstalledPacks {
-		_, err := os.Stat(p.Directory)
+		_, err := os.Stat(p.Path)
 		if !os.IsNotExist(err) {
-			t.Errorf("expected pack directory %q to be removed, stat err = %v", p.Directory, err)
+			t.Errorf("expected pack directory %q to be removed, stat err = %v", p.Path, err)
 		}
 	}
 }
@@ -58,11 +58,11 @@ func TestUninstallPackByUUID(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if pack.Name != "Foobar BP" {
-		t.Errorf("Name = %q, want %q", pack.Name, "Foobar BP")
+	if pack.Name() != "Foobar BP" {
+		t.Errorf("Name = %q, want %q", pack.Name(), "Foobar BP")
 	}
-	if pack.Kind != BehaviorPack {
-		t.Errorf("Kind = %v, want BehaviorPack", pack.Kind)
+	if pack.KindSafe() != BehaviorPack {
+		t.Errorf("Kind = %v, want BehaviorPack", pack.KindSafe())
 	}
 
 	worldDir, _ := FindActiveWorldDir(tempServerDir)
@@ -70,7 +70,7 @@ func TestUninstallPackByUUID(t *testing.T) {
 	if len(entries) != 0 {
 		t.Errorf("expected registry to be empty after uninstall, got %v", entries)
 	}
-	_, err = os.Stat(pack.Directory)
+	_, err = os.Stat(pack.Path)
 	if !os.IsNotExist(err) {
 		t.Errorf("expected pack directory to be removed")
 	}
@@ -98,11 +98,11 @@ func TestInstallThenUninstallByUUID(t *testing.T) {
 		t.Fatalf("expected 1 installed pack, got %d", len(installed))
 	}
 
-	pack, err := UninstallPackInServerByUUID(installed[0].UUID, tempServerDir)
+	pack, err := UninstallPackInServerByUUID(installed[0].UUID(), tempServerDir)
 	if err != nil {
 		t.Fatalf("uninstall by uuid failed: %v", err)
 	}
-	if pack.Name != "Solo BP" {
-		t.Errorf("Name = %q, want %q", pack.Name, "Solo BP")
+	if pack.Name() != "Solo BP" {
+		t.Errorf("Name = %q, want %q", pack.Name(), "Solo BP")
 	}
 }
