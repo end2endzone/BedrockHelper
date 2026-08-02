@@ -16,7 +16,7 @@ func TestFindManifestsInAddon(t *testing.T) {
 		}
 
 		sort.Strings(got)
-		want := []string{"foobar_BP/manifest.json", "foobar_RP/manifest.json", "manifest.json"}
+		want := []string{"foobar_BP/manifest.json", "foobar_RP/manifest.json"}
 
 		if !reflect.DeepEqual(got, want) {
 			t.Errorf("FindManifestsInAddon() = %v, want %v", got, want)
@@ -52,44 +52,6 @@ func TestFindManifestsInAddon(t *testing.T) {
 	})
 }
 
-func TestPackManifestPaths(t *testing.T) {
-	cases := []struct {
-		name  string
-		input []string
-		want  []string
-	}{
-		{
-			name:  "bundle: master manifest filtered out",
-			input: []string{"manifest.json", "foobar_BP/manifest.json", "foobar_RP/manifest.json"},
-			want:  []string{"foobar_BP/manifest.json", "foobar_RP/manifest.json"},
-		},
-		{
-			name:  "standalone pack: single root manifest kept",
-			input: []string{"manifest.json"},
-			want:  []string{"manifest.json"},
-		},
-		{
-			name:  "no nesting at all: all kept as-is",
-			input: []string{"manifest.json", "other/manifest2.json"},
-			want:  []string{"other/manifest2.json"},
-		},
-	}
-
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			got := filterManifestPaths(tc.input)
-
-			sort.Strings(got)
-			want := append([]string(nil), tc.want...)
-
-			sort.Strings(want)
-			if !reflect.DeepEqual(got, want) {
-				t.Errorf("filterManifestPaths(%v) = %v, want %v", tc.input, got, want)
-			}
-		})
-	}
-}
-
 func TestExtractAddon(t *testing.T) {
 	dest := t.TempDir()
 	err := ExtractZip(getAddonFixturePath(t, "foobar.mcaddon"), dest)
@@ -98,7 +60,6 @@ func TestExtractAddon(t *testing.T) {
 	}
 
 	for _, rel := range []string{
-		"manifest.json",
 		"foobar_BP/manifest.json",
 		"foobar_BP/items/coin.json",
 		"foobar_RP/manifest.json",

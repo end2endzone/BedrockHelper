@@ -131,35 +131,3 @@ func readZipEntry(zipPath, entryName string) ([]byte, error) {
 
 	return nil, fmt.Errorf("entry %q not found in %q", entryName, zipPath)
 }
-
-// filterManifestPaths filters the given list of relative manifest.json paths to only keep the manifest that
-// matches a behavior pack or a resource pack.
-// Excludes manifests that are located at the root of an .mcpaddon file.
-func filterManifestPaths(manifestPaths []string) []string {
-	// Nothing to filter if there is only 1 manifest found
-	if len(manifestPaths) <= 1 {
-		return manifestPaths
-	}
-
-	hasNested := false
-	for _, p := range manifestPaths {
-		if strings.Contains(p, "/") {
-			hasNested = true
-			break
-		}
-	}
-	if !hasNested {
-		return manifestPaths
-	}
-
-	var filtered []string
-	for _, p := range manifestPaths {
-		if !strings.Contains(p, "/") {
-			// Root manifest alongside nested pack manifests, skip it.
-			continue
-		}
-		filtered = append(filtered, p)
-	}
-
-	return filtered
-}
