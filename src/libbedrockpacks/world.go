@@ -311,7 +311,7 @@ func (w World) UninstallAddon(addonPath string) ([]*Pack, error) {
 	}
 
 	// Load packs from the extracted archive
-	packs, err := LoadPacksFromSubdirectories(tempDir)
+	packs, err := LoadAllPacksFromDirectoriesOrSubdirectories(tempDir)
 	if err != nil {
 		return nil, err
 	}
