@@ -4,14 +4,14 @@ import (
 	"path/filepath"
 	"sort"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestFindAddonsInDir_NonRecursive(t *testing.T) {
 	dir := testdataDir(t) + "/addons"
 	got, err := FindAddonsInDir(dir, false)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
 	names := baseNames(got)
 	sort.Strings(names)
@@ -24,38 +24,41 @@ func TestFindAddonsInDir_NonRecursive(t *testing.T) {
 		"foobar.mcaddon",
 		"zip_with_no_manifest.zip",
 		"solo.mcpack"}
-	if !equalStrings(names, want) {
-		t.Errorf("FindAddonsInDir(non-recursive) = %v, want %v", names, want)
+	sort.Strings(want)
+
+	require.Equal(t, len(want), len(names))
+	for i := range names {
+		require.Equal(t, want[i], names[i], "failure at index %v", i)
 	}
 }
 
 func TestFindAddonsInDir_Recursive(t *testing.T) {
 	dir := testdataDir(t)
+
 	got, err := FindAddonsInDir(dir, true)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
+
 	names := baseNames(got)
-	found := make(map[string]bool)
-	for _, n := range names {
-		found[n] = true
-	}
-	for _, want := range []string{"foobar.mcaddon", "solo.mcpack", "behavior_only.mcpack"} {
-		if !found[want] {
-			t.Errorf("expected recursive scan to find %q, results were: %v", want, names)
-		}
+	sort.Strings(names)
+
+	want := []string{
+		"foobar.mcaddon",
+		"solo.mcpack",
+		"behavior_only.mcpack",
+		"zip_with_no_manifest.zip"}
+	sort.Strings(want)
+
+	require.Equal(t, len(want), len(names), "want={%v},  got={%v}", want, names)
+	for i := range names {
+		require.Equal(t, want[i], names[i], "failure at index %v", i)
 	}
 }
 
 func TestFindAddonsInDir_EmptyDir(t *testing.T) {
 	dir := t.TempDir()
 	got, err := FindAddonsInDir(dir, true)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if len(got) != 0 {
-		t.Errorf("expected no add-ons in an empty directory, got %v", got)
-	}
+	require.NoError(t, err)
+	require.Equal(t, 0, len(got))
 }
 
 func baseNames(paths []string) []string {
@@ -64,18 +67,4 @@ func baseNames(paths []string) []string {
 		out[i] = filepath.Base(p)
 	}
 	return out
-}
-
-func equalStrings(a, b []string) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	sort.Strings(a)
-	sort.Strings(b)
-	for i := range a {
-		if a[i] != b[i] {
-			return false
-		}
-	}
-	return true
 }

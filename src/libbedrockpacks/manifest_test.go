@@ -1,6 +1,10 @@
 package libbedrockpacks
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/require"
+)
 
 func TestParseManifest(t *testing.T) {
 	valid := []byte(`{
@@ -10,37 +14,21 @@ func TestParseManifest(t *testing.T) {
 	}`)
 
 	m, err := LoadManifestFromBytes(valid)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if m.Header.Name != "Test Pack" {
-		t.Errorf("Name = %q, want %q", m.Header.Name, "Test Pack")
-	}
-	if m.Header.UUID != "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa" {
-		t.Errorf("UUID = %q, want the header uuid", m.Header.UUID)
-	}
-	if m.Header.Version != (Version{1, 2, 3}) {
-		t.Errorf("Version = %v, want [1 2 3]", m.Header.Version)
-	}
-	got := m.Header.Version.String()
-	want := "1.2.3"
-	if got != want {
-		t.Errorf("Version.String() = %q, want %q", got, want)
-	}
+	require.NoError(t, err)
+	require.Equal(t, "Test Pack", m.Header.Name)
+	require.Equal(t, "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", m.Header.UUID)
+	require.Equal(t, (Version{1, 2, 3}), m.Header.Version)
+	require.Equal(t, "1.2.3", m.Header.Version.String())
 
 	t.Run("missing uuid", func(t *testing.T) {
 		data := []byte(`{"header": {"name": "No UUID", "version": [1,0,0]}}`)
 		_, err := LoadManifestFromBytes(data)
-		if err == nil {
-			t.Fatal("expected error for manifest missing header.uuid, got nil")
-		}
+		require.Error(t, err, "expected error for manifest missing header.uuid, got nil")
 	})
 
 	t.Run("malformed json", func(t *testing.T) {
 		_, err := LoadManifestFromBytes([]byte(`{not valid json`))
-		if err == nil {
-			t.Fatal("expected error for malformed JSON, got nil")
-		}
+		require.Error(t, err, "expected error for malformed JSON, got nil")
 	})
 }
 
@@ -64,21 +52,15 @@ func TestIdentifyPackKind(t *testing.T) {
 				Modules: []Module{{Type: tc.moduleType, UUID: "mod-uuid"}},
 			}
 			kind, err := IdentifyPackKind(m)
-			if err != nil {
-				t.Fatalf("unexpected error: %v", err)
-			}
-			if kind != tc.want {
-				t.Errorf("IdentifyPackKind() = %v, want %v", kind, tc.want)
-			}
+			require.NoError(t, err)
+			require.Equal(t, tc.want, kind)
 		})
 	}
 
 	t.Run("no modules", func(t *testing.T) {
 		m := &AddonManifest{Header: Header{UUID: "uuid"}}
 		_, err := IdentifyPackKind(m)
-		if err == nil {
-			t.Fatal("expected error for manifest with no modules, got nil")
-		}
+		require.Error(t, err, "expected error for manifest with no modules, got nil")
 	})
 
 	t.Run("unrecognized module type", func(t *testing.T) {
@@ -87,16 +69,12 @@ func TestIdentifyPackKind(t *testing.T) {
 			Modules: []Module{{Type: "something_else"}},
 		}
 		_, err := IdentifyPackKind(m)
-		if err == nil {
-			t.Fatal("expected error for unrecognized module type, got nil")
-		}
+		require.Error(t, err, "expected error for unrecognized module type, got nil")
 	})
 
 	t.Run("nil manifest", func(t *testing.T) {
 		_, err := IdentifyPackKind(nil)
-		if err == nil {
-			t.Fatal("expected error for nil manifest, got nil")
-		}
+		require.Error(t, err, "expected error for nil manifest, got nil")
 	})
 
 	t.Run("mixed modules prefer behavior", func(t *testing.T) {
@@ -108,12 +86,8 @@ func TestIdentifyPackKind(t *testing.T) {
 			},
 		}
 		kind, err := IdentifyPackKind(m)
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-		if kind != BehaviorPack {
-			t.Errorf("IdentifyPackKind() with mixed modules = %v, want BehaviorPack", kind)
-		}
+		require.NoError(t, err)
+		require.Equal(t, BehaviorPack, kind)
 	})
 }
 
@@ -125,8 +99,6 @@ func TestPackKindString(t *testing.T) {
 	}
 	for kind, want := range cases {
 		got := kind.String()
-		if got != want {
-			t.Errorf("%v.String() = %q, want %q", int(kind), got, want)
-		}
+		require.Equal(t, want, got)
 	}
 }

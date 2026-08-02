@@ -4,6 +4,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 // testdataDir returns the absolute path to the testdata directory located at the project's root directory.
@@ -11,9 +13,7 @@ import (
 func testdataDir(t *testing.T) string {
 	t.Helper()
 	wd, err := os.Getwd()
-	if err != nil {
-		t.Fatalf("failed to get working directory: %v", err)
-	}
+	require.NoError(t, err)
 
 	// This file lives in <module>/libbedrockpacks, so testdata is a sibling
 	// of that directory.
@@ -38,9 +38,8 @@ func copyServerFixture(t *testing.T, name string) string {
 	src := getServerFixturePath(t, name)
 	dst := filepath.Join(t.TempDir(), name)
 	err := copyDir(src, dst)
-	if err != nil {
-		t.Fatalf("failed to copy server fixture %q: %v", name, err)
-	}
+	require.NoError(t, err, "failed to copy server fixture %q", name)
+
 	return dst
 }
 
@@ -52,9 +51,8 @@ func copyAddonFixture(t *testing.T, name string) string {
 	src := getAddonFixturePath(t, name)
 	dst := filepath.Join(t.TempDir(), filepath.Base(src)) // put the file directly in TempDir.
 	err := copyFile(src, dst)
-	if err != nil {
-		t.Fatalf("failed to copy addon fixture %q: %v", name, err)
-	}
+	require.NoError(t, err, "failed to copy addon fixture %q", name)
+
 	return dst
 }
 
@@ -62,7 +60,5 @@ func TestCopyAddonFixture(t *testing.T) {
 	tempAddonPath := copyAddonFixture(t, "foobar.mcaddon")
 	defer os.Remove(tempAddonPath)
 
-	if tempAddonPath == "" {
-		t.Fatalf("unknown path to atemporary addon")
-	}
+	require.NotEqual(t, "", tempAddonPath)
 }

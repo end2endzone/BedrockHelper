@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 // getWorld is an internal testing function to get a director World pointer without a server while in tests.
@@ -45,11 +47,10 @@ func TestFindActiveWorldDir(t *testing.T) {
 			serverDir := getServerFixturePath(t, tc.fixture)
 			got, err := FindActiveWorldDir(serverDir)
 
-			if !tc.expectError && err != nil {
-				t.Fatalf("expected no error, got: %v", err)
-			}
-			if tc.expectError && err == nil {
-				t.Fatalf("expected an error, got nil")
+			if !tc.expectError {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
 			}
 
 			if !tc.expectError {
@@ -57,12 +58,8 @@ func TestFindActiveWorldDir(t *testing.T) {
 				// Build an absolute path from the expected relative path
 
 				want := serverDir + "/" + tc.expectSuffix
-
 				want = filepath.Clean(want) // normalize expected path to match the file separator on the system
-
-				if got != want {
-					t.Errorf("FindActiveWorldDir(%q) = %q, want %q", serverDir, got, want)
-				}
+				require.Equal(t, want, got)
 			}
 
 		})

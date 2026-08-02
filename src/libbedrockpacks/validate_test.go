@@ -1,6 +1,10 @@
 package libbedrockpacks
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/require"
+)
 
 func TestIsValidServerDirectory(t *testing.T) {
 	cases := []struct {
@@ -24,15 +28,16 @@ func TestIsValidServerDirectory(t *testing.T) {
 			path := getServerFixturePath(t, tc.fixture)
 			ok := IsValidServerDirectory(path)
 			err := ValidateServerDirectory(path)
-			if ok != tc.expectValid {
-				t.Fatalf("IsValidServerDirectory(%q) = (%v, %v), expected %v", path, ok, err, tc.expectValid)
+
+			if !tc.expectError {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
 			}
-			if !tc.expectError && err != nil {
-				t.Fatalf("expected no error, got: %v", err)
-			}
-			if tc.expectError && err == nil {
-				t.Fatalf("expected an error, got nil")
-			}
+
+			got := ok
+			want := tc.expectValid
+			require.Equal(t, want, got, "IsValidServerDirectory(%q) = (%v, %v), expected %v", path, ok, err, tc.expectValid)
 		})
 	}
 

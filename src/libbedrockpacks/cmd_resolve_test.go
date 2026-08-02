@@ -4,6 +4,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestResolvePackByUUID(t *testing.T) {
@@ -16,32 +18,24 @@ func TestResolvePackByUUID(t *testing.T) {
 
 	// Copy an add-on file inside the server directory so that we can resolve from a UUID.
 	src, err := os.ReadFile(getAddonFixturePath(t, "foobar.mcaddon"))
-	if err != nil {
-		t.Fatalf("failed to read fixture addon: %v", err)
-	}
+	require.NoError(t, err)
+
 	newServerAddonsSubDir := filepath.Join(tempServerDir, "new_incoming")
 	err = os.MkdirAll(newServerAddonsSubDir, 0o755)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	newAddonPath := filepath.Join(newServerAddonsSubDir, "foobar.mcaddon")
 	err = os.WriteFile(newAddonPath, src, 0o644)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	foobarMcAddonRessourcePackUUID := "33333333-3333-3333-3333-333333333333"
 
 	// Try to resolve
 	got, err := ResolvePackByUUID(foobarMcAddonRessourcePackUUID, tempServerDir)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
 	// Assert we found our pack inside our addon
-	if got != newAddonPath {
-		t.Errorf("ResolvePackByUUID() = %q, want %q", got, newAddonPath)
-	}
+	require.Equal(t, newAddonPath, got)
 }
 
 func TestResolvePackByUUID_NotFound(t *testing.T) {
@@ -49,9 +43,7 @@ func TestResolvePackByUUID_NotFound(t *testing.T) {
 	defer os.RemoveAll(tempServerDir)
 
 	_, err := ResolvePackByUUID("00000000-0000-0000-0000-000000000000", tempServerDir)
-	if err == nil {
-		t.Fatal("expected error when no add-on matches the uuid, got nil")
-	}
+	require.Error(t, err)
 }
 
 func TestResolvePackByUUID_InvalidServer(t *testing.T) {
@@ -59,10 +51,6 @@ func TestResolvePackByUUID_InvalidServer(t *testing.T) {
 	defer os.RemoveAll(tempServerDir)
 
 	path, err := ResolvePackByUUID("33333333-3333-3333-3333-333333333333", tempServerDir)
-	if err == nil {
-		t.Fatalf("expected an error, got nil")
-	}
-	if path != "" {
-		t.Fatalf("expected an empty path, got: %v", path)
-	}
+	require.Error(t, err)
+	require.Equal(t, "", path)
 }

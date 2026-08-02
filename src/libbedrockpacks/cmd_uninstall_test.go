@@ -3,6 +3,8 @@ package libbedrockpacks
 import (
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestUninstallAddon(t *testing.T) {
@@ -10,32 +12,23 @@ func TestUninstallAddon(t *testing.T) {
 	defer os.RemoveAll(tempServerDir)
 
 	_, err := InstallAddonInServer(getAddonFixturePath(t, "foobar.mcaddon"), tempServerDir)
-	if err != nil {
-		t.Fatalf("setup install failed: %v", err)
-	}
+	require.NoError(t, err)
 
 	uninstalledPacks, err := UninstallAddonInServer(getAddonFixturePath(t, "foobar.mcaddon"), tempServerDir)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if len(uninstalledPacks) != 2 {
-		t.Fatalf("expected 2 packs uninstalled, got %d", len(uninstalledPacks))
-	}
+	require.NoError(t, err)
+	require.Equal(t, 2, len(uninstalledPacks), "expected 2 packs uninstalled")
 
 	// Verify both registry files were deleted.
 	worldDir, _ := FindActiveWorldDir(tempServerDir)
 	bpEntries, _ := readRegistry(worldDir, BehaviorPack)
 	rpEntries, _ := readRegistry(worldDir, ResourcePack)
-	if len(bpEntries) != 0 || len(rpEntries) != 0 {
-		t.Errorf("expected empty registries after uninstall, got bp=%v rp=%v", bpEntries, rpEntries)
-	}
+	require.Equal(t, 0, len(bpEntries))
+	require.Equal(t, 0, len(rpEntries))
 
 	// Assert that each uninstalled pack's directory were deleted
 	for _, p := range uninstalledPacks {
 		_, err := os.Stat(p.Path)
-		if !os.IsNotExist(err) {
-			t.Errorf("expected pack directory %q to be removed, stat err = %v", p.Path, err)
-		}
+		require.True(t, os.IsNotExist(err), "expected pack directory %q to be removed, stat err = %v", p.Path, err)
 	}
 }
 
@@ -45,9 +38,7 @@ func TestUninstallAddon_NotInstalled(t *testing.T) {
 
 	// Never installed, so this should fail to find the pack in the world.
 	_, err := UninstallAddonInServer(getAddonFixturePath(t, "foobar.mcaddon"), tempServerDir)
-	if err == nil {
-		t.Fatal("expected error uninstalling a pack that was never installed, got nil")
-	}
+	require.Error(t, err)
 }
 
 func TestUninstallPackByUUID(t *testing.T) {
@@ -55,25 +46,16 @@ func TestUninstallPackByUUID(t *testing.T) {
 	defer os.RemoveAll(tempServerDir)
 
 	pack, err := UninstallPackInServerByUUID("2bda6085-9d71-4d8a-9b9f-74e07b30459c", tempServerDir)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if pack.Name() != "Foobar BP" {
-		t.Errorf("Name = %q, want %q", pack.Name(), "Foobar BP")
-	}
-	if pack.KindSafe() != BehaviorPack {
-		t.Errorf("Kind = %v, want BehaviorPack", pack.KindSafe())
-	}
+	require.NoError(t, err)
+	require.Equal(t, "Foobar BP", pack.Name())
+	require.Equal(t, BehaviorPack, pack.KindSafe())
 
 	worldDir, _ := FindActiveWorldDir(tempServerDir)
 	entries, _ := readRegistry(worldDir, BehaviorPack)
-	if len(entries) != 0 {
-		t.Errorf("expected registry to be empty after uninstall, got %v", entries)
-	}
+	require.Equal(t, 0, len(entries))
+
 	_, err = os.Stat(pack.Path)
-	if !os.IsNotExist(err) {
-		t.Errorf("expected pack directory to be removed")
-	}
+	require.True(t, os.IsNotExist(err), "expected pack directory to be removed")
 }
 
 func TestUninstallPackByUUID_UnknownUUID(t *testing.T) {
@@ -81,9 +63,7 @@ func TestUninstallPackByUUID_UnknownUUID(t *testing.T) {
 	defer os.RemoveAll(tempServerDir)
 
 	_, err := UninstallPackInServerByUUID("00000000-0000-0000-0000-000000000000", tempServerDir)
-	if err == nil {
-		t.Fatal("expected error for unknown uuid, got nil")
-	}
+	require.Error(t, err)
 }
 
 func TestInstallThenUninstallByUUID(t *testing.T) {
@@ -91,18 +71,10 @@ func TestInstallThenUninstallByUUID(t *testing.T) {
 	defer os.RemoveAll(tempServerDir)
 
 	installed, err := InstallAddonInServer(getAddonFixturePath(t, "behavior_only.mcpack"), tempServerDir)
-	if err != nil {
-		t.Fatalf("install failed: %v", err)
-	}
-	if len(installed) != 1 {
-		t.Fatalf("expected 1 installed pack, got %d", len(installed))
-	}
+	require.NoError(t, err)
+	require.Equal(t, 1, len(installed))
 
 	pack, err := UninstallPackInServerByUUID(installed[0].UUID(), tempServerDir)
-	if err != nil {
-		t.Fatalf("uninstall by uuid failed: %v", err)
-	}
-	if pack.Name() != "Solo BP" {
-		t.Errorf("Name = %q, want %q", pack.Name(), "Solo BP")
-	}
+	require.NoError(t, err)
+	require.Equal(t, "Solo BP", pack.Name())
 }

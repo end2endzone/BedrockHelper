@@ -3,6 +3,8 @@ package libbedrockpacks
 import (
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestListInstalledPacks(t *testing.T) {
@@ -10,21 +12,11 @@ func TestListInstalledPacks(t *testing.T) {
 	defer os.RemoveAll(tempServerDir)
 
 	packs, err := ListInstalledPacks(tempServerDir)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if len(packs) != 1 {
-		t.Fatalf("expected 1 registered pack, got %d: %+v", len(packs), packs)
-	}
-	if packs[0].UUID() != "2bda6085-9d71-4d8a-9b9f-74e07b30459c" {
-		t.Errorf("UUID = %q, want the registered uuid", packs[0].UUID())
-	}
-	if packs[0].Name() != "Foobar BP" {
-		t.Errorf("Name = %q, want %q (resolved from installed manifest.json)", packs[0].Name(), "Foobar BP")
-	}
-	if packs[0].KindSafe() != BehaviorPack {
-		t.Errorf("Kind = %v, want BehaviorPack", packs[0].KindSafe())
-	}
+	require.NoError(t, err)
+	require.Equal(t, 1, len(packs))
+	require.Equal(t, "2bda6085-9d71-4d8a-9b9f-74e07b30459c", packs[0].UUID())
+	require.Equal(t, "Foobar BP", packs[0].Name())
+	require.Equal(t, BehaviorPack, packs[0].KindSafe())
 }
 
 func TestListInstalledPacks_EmptyServer(t *testing.T) {
@@ -32,12 +24,8 @@ func TestListInstalledPacks_EmptyServer(t *testing.T) {
 	defer os.RemoveAll(tempServerDir)
 
 	packs, err := ListInstalledPacks(tempServerDir)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if len(packs) != 0 {
-		t.Errorf("expected no registered packs, got %+v", packs)
-	}
+	require.NoError(t, err)
+	require.Equal(t, 0, len(packs))
 }
 
 func TestListInstalledPacks_AfterInstallAndUninstall(t *testing.T) {
@@ -45,34 +33,22 @@ func TestListInstalledPacks_AfterInstallAndUninstall(t *testing.T) {
 	defer os.RemoveAll(tempServerDir)
 
 	_, err := InstallAddonInServer(getAddonFixturePath(t, "foobar.mcaddon"), tempServerDir)
-	if err != nil {
-		t.Fatalf("install failed: %v", err)
-	}
+	require.NoError(t, err)
+
 	packs, err := ListInstalledPacks(tempServerDir)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if len(packs) != 2 {
-		t.Fatalf("expected 2 registered packs after install, got %d", len(packs))
-	}
+	require.NoError(t, err)
+	require.Equal(t, 2, len(packs))
 
 	_, err = UninstallAddonInServer(getAddonFixturePath(t, "foobar.mcaddon"), tempServerDir)
-	if err != nil {
-		t.Fatalf("uninstall failed: %v", err)
-	}
+	require.NoError(t, err)
+
 	packs, err = ListInstalledPacks(tempServerDir)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if len(packs) != 0 {
-		t.Errorf("expected 0 registered packs after uninstall, got %d: %+v", len(packs), packs)
-	}
+	require.NoError(t, err)
+	require.Equal(t, 0, len(packs))
 }
 
 func TestListInstalledPacks_InvalidServer(t *testing.T) {
 	invalidServer := getServerFixturePath(t, "not_a_server")
 	_, err := ListInstalledPacks(invalidServer)
-	if err == nil {
-		t.Fatal("expected error for invalid server directory, got nil")
-	}
+	require.Error(t, err)
 }

@@ -3,61 +3,48 @@ package libbedrockpacks
 import (
 	"os"
 	"path/filepath"
-	"reflect"
 	"sort"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestFindManifestsInAddon(t *testing.T) {
 	t.Run("bundle with master + two packs", func(t *testing.T) {
 		got, err := FindManifestsRelativePathInAddon(getAddonFixturePath(t, "foobar.mcaddon"))
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
+		require.NoError(t, err)
 
 		sort.Strings(got)
 		want := []string{"foobar_BP/manifest.json", "foobar_RP/manifest.json"}
 
-		if !reflect.DeepEqual(got, want) {
-			t.Errorf("FindManifestsInAddon() = %v, want %v", got, want)
-		}
+		require.Equal(t, want, got)
 	})
 
 	t.Run("standalone mcpack", func(t *testing.T) {
 		got, err := FindManifestsRelativePathInAddon(getAddonFixturePath(t, "solo.mcpack"))
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
+		require.NoError(t, err)
 
 		sort.Strings(got)
 		want := []string{"manifest.json"}
 
-		if !reflect.DeepEqual(got, want) {
-			t.Errorf("FindManifestsInAddon() = %v, want %v", got, want)
-		}
+		require.Equal(t, want, got)
 	})
 
 	t.Run("zip with no manifest", func(t *testing.T) {
 		_, err := FindManifestsRelativePathInAddon(getAddonFixturePath(t, "no_manifest.zip"))
-		if err == nil {
-			t.Fatal("expected error for zip with no manifest.json, got nil")
-		}
+		require.Error(t, err, "expected error for zip with no manifest.json, got nil")
 	})
 
 	t.Run("nonexistent file", func(t *testing.T) {
 		_, err := FindManifestsRelativePathInAddon("/tmp/nope.mcaddon")
-		if err == nil {
-			t.Fatal("expected error for nonexistent file, got nil")
-		}
+		require.Error(t, err, "expected error for nonexistent file, got nil")
 	})
 }
 
 func TestExtractAddon(t *testing.T) {
 	dest := t.TempDir()
 	err := ExtractZip(getAddonFixturePath(t, "foobar.mcaddon"), dest)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
 	for _, rel := range []string{
 		"foobar_BP/manifest.json",
@@ -66,29 +53,18 @@ func TestExtractAddon(t *testing.T) {
 		"foobar_RP/textures/items/coin.png",
 	} {
 		_, err := os.Stat(filepath.Join(dest, filepath.FromSlash(rel)))
-		if err != nil {
-			t.Errorf("expected extracted file %q to exist: %v", rel, err)
-		}
+		require.NoError(t, err)
 	}
 }
 
 func TestReadZipEntry(t *testing.T) {
 	data, err := readZipEntry(getAddonFixturePath(t, "solo.mcpack"), "manifest.json")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
 	m, err := LoadManifestFromBytes(data)
-	if err != nil {
-		t.Fatalf("failed to parse extracted manifest: %v", err)
-	}
-
-	if m.Header.Name != "Solo RP" {
-		t.Errorf("Name = %q, want %q", m.Header.Name, "Solo RP")
-	}
+	require.NoError(t, err)
+	require.Equal(t, "Solo RP", m.Header.Name)
 
 	_, err = readZipEntry(getAddonFixturePath(t, "solo.mcpack"), "does/not/exist.json")
-	if err == nil {
-		t.Fatal("expected error reading a nonexistent zip entry, got nil")
-	}
+	require.Error(t, err)
 }

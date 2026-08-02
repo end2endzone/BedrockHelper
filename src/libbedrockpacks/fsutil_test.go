@@ -4,6 +4,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestSanitizePackDirName(t *testing.T) {
@@ -17,44 +19,33 @@ func TestSanitizePackDirName(t *testing.T) {
 	}
 	for in, want := range cases {
 		got := sanitizeCharactersInPath(in)
-		if got != want {
-			t.Errorf("sanitizeCharactersInPath(%q) = %q, want %q", in, got, want)
-		}
+		require.Equal(t, want, got)
 	}
 }
 
 func TestMoveDir(t *testing.T) {
 	src := filepath.Join(t.TempDir(), "src")
 	err := os.MkdirAll(filepath.Join(src, "nested"), 0o755)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	err = os.WriteFile(filepath.Join(src, "file.txt"), []byte("hello"), 0o644)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	err = os.WriteFile(filepath.Join(src, "nested", "inner.txt"), []byte("world"), 0o644)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	dst := filepath.Join(t.TempDir(), "dst", "moved")
 	err = moveDir(src, dst)
-	if err != nil {
-		t.Fatalf("moveDir failed: %v", err)
-	}
+	require.NoError(t, err)
 
 	_, err = os.Stat(src)
-	if !os.IsNotExist(err) {
-		t.Errorf("expected source directory to be gone after move, stat err = %v", err)
-	}
+	require.True(t, os.IsNotExist(err), "expected source directory to be gone after move")
 
 	data, err := os.ReadFile(filepath.Join(dst, "file.txt"))
-	if err != nil || string(data) != "hello" {
-		t.Errorf("file.txt = %q, %v; want %q, nil", data, err, "hello")
-	}
+	require.NoError(t, err)
+	require.Equal(t, "hello", string(data))
+
 	data, err = os.ReadFile(filepath.Join(dst, "nested", "inner.txt"))
-	if err != nil || string(data) != "world" {
-		t.Errorf("nested/inner.txt = %q, %v; want %q, nil", data, err, "world")
-	}
+	require.NoError(t, err)
+	require.Equal(t, "world", string(data))
 }

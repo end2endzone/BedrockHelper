@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"sort"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestInstallAddon_Bundle(t *testing.T) {
@@ -12,43 +14,33 @@ func TestInstallAddon_Bundle(t *testing.T) {
 	defer os.RemoveAll(tempServerDir)
 
 	installedPacks, err := InstallAddonInServer(getAddonFixturePath(t, "foobar.mcaddon"), tempServerDir)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if len(installedPacks) != 2 {
-		t.Fatalf("expected 2 packs installedPacks, got %d: %+v", len(installedPacks), installedPacks)
-	}
+	require.NoError(t, err)
+	require.Equal(t, 2, len(installedPacks))
 
 	var kinds []string
 	for _, pack := range installedPacks {
 		kinds = append(kinds, pack.KindSafe().String())
 		_, err := os.Stat(filepath.Join(pack.Path, "manifest.json"))
-		if err != nil {
-			t.Errorf("expected manifest.json at %q: %v", pack.Path, err)
-		}
+		require.NoError(t, err)
 	}
 
 	sort.Strings(kinds)
-	if kinds[0] != "BehaviorPack" || kinds[1] != "ResourcePack" {
-		t.Errorf("kinds = %v, want [BehaviorPack ResourcePack]", kinds)
-	}
+	require.Equal(t, "BehaviorPack", kinds[0])
+	require.Equal(t, "ResourcePack", kinds[1])
 
 	// Verify both registry files were updated.
 	worldDir, _ := FindActiveWorldDir(tempServerDir)
 	bpEntries, err := readRegistry(worldDir, BehaviorPack)
-	if err != nil || len(bpEntries) != 1 {
-		t.Errorf("behavior pack registry = %v, err %v; want 1 entry", bpEntries, err)
-	}
+	require.NoError(t, err)
+	require.Equal(t, 1, len(bpEntries))
+
 	rpEntries, err := readRegistry(worldDir, ResourcePack)
-	if err != nil || len(rpEntries) != 1 {
-		t.Errorf("resource pack registry = %v, err %v; want 1 entry", rpEntries, err)
-	}
+	require.NoError(t, err)
+	require.Equal(t, 1, len(rpEntries))
 
 	// The master link manifest.json must NOT itself be treated as an installed pack.
 	for _, p := range installedPacks {
-		if p.Name() == "Foobar Addon" {
-			t.Errorf("master link manifest should not be installed as a pack: %v", p)
-		}
+		require.True(t, p.Name() == "Foobar BP" || p.Name() == "Foobar RP")
 	}
 }
 
@@ -57,19 +49,10 @@ func TestInstallAddon_StandaloneMcpack(t *testing.T) {
 	defer os.RemoveAll(tempServerDir)
 
 	installedPacks, err := InstallAddonInServer(getAddonFixturePath(t, "solo.mcpack"), tempServerDir)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if len(installedPacks) != 1 {
-		t.Fatalf("expected 1 pack installedPacks, got %d", len(installedPacks))
-	}
-
-	if installedPacks[0].KindSafe() != ResourcePack {
-		t.Errorf("Kind = %v, want ResourcePack", installedPacks[0].KindSafe())
-	}
-	if installedPacks[0].Name() != "Solo RP" {
-		t.Errorf("Name = %q, want %q", installedPacks[0].Name(), "Solo RP")
-	}
+	require.NoError(t, err)
+	require.Equal(t, 1, len(installedPacks))
+	require.Equal(t, ResourcePack, installedPacks[0].KindSafe())
+	require.Equal(t, "Solo RP", installedPacks[0].Name())
 }
 
 func TestInstallAddon_ReinstallReplacesExisting(t *testing.T) {
@@ -77,23 +60,15 @@ func TestInstallAddon_ReinstallReplacesExisting(t *testing.T) {
 	defer os.RemoveAll(tempServerDir)
 
 	_, err := InstallAddonInServer(getAddonFixturePath(t, "foobar.mcaddon"), tempServerDir)
-	if err != nil {
-		t.Fatalf("first install failed: %v", err)
-	}
+	require.NoError(t, err)
 
 	installedPacks, err := InstallAddonInServer(getAddonFixturePath(t, "foobar.mcaddon"), tempServerDir)
-	if err != nil {
-		t.Fatalf("reinstall failed: %v", err)
-	}
-	if len(installedPacks) != 2 {
-		t.Fatalf("expected 2 packs after reinstall, got %d", len(installedPacks))
-	}
+	require.NoError(t, err)
+	require.Equal(t, 2, len(installedPacks))
 
 	worldDir, _ := FindActiveWorldDir(tempServerDir)
 	bpEntries, _ := readRegistry(worldDir, BehaviorPack)
-	if len(bpEntries) != 1 {
-		t.Errorf("expected reinstall to not duplicate registry entries, got %d", len(bpEntries))
-	}
+	require.Equal(t, 1, len(bpEntries))
 }
 
 func TestInstallAddon_Errors(t *testing.T) {
@@ -102,24 +77,18 @@ func TestInstallAddon_Errors(t *testing.T) {
 
 	t.Run("invalid addon file", func(t *testing.T) {
 		_, err := InstallAddonInServer(getAddonFixturePath(t, "corrupt.mcaddon"), tempServerDir)
-		if err == nil {
-			t.Fatal("expected error installing a corrupt add-on, got nil")
-		}
+		require.Error(t, err)
 	})
 
 	t.Run("addon with no manifests", func(t *testing.T) {
 		_, err := InstallAddonInServer(getAddonFixturePath(t, "no_manifest.zip"), tempServerDir)
-		if err == nil {
-			t.Fatal("expected error installing an add-on with no manifests, got nil")
-		}
+		require.Error(t, err)
 	})
 
 	t.Run("invalid server directory", func(t *testing.T) {
 		newInvalidServerDir := getServerFixturePath(t, "not_a_server")
 		_, err := InstallAddonInServer(getAddonFixturePath(t, "foobar.mcaddon"), newInvalidServerDir)
-		if err == nil {
-			t.Fatal("expected error installing to an invalid server directory, got nil")
-		}
+		require.Error(t, err)
 	})
 
 	t.Run("server with level-name set but worlds dir not yet created should fail", func(t *testing.T) {
@@ -129,8 +98,6 @@ func TestInstallAddon_Errors(t *testing.T) {
 		defer os.RemoveAll(tempServerDir)
 
 		_ /*installedPacks*/, err := InstallAddonInServer(getAddonFixturePath(t, "foobar.mcaddon"), tempServerDir)
-		if err == nil {
-			t.Fatalf("expected an error, got nil")
-		}
+		require.Error(t, err)
 	})
 }
