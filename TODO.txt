@@ -1,2 +1,4 @@
 - Change resolve and --resolve to --discover. Consider using a command line such as `--install --auto-discover-addons`
 - Rename library/package from `libbedrockpacks` to `libminecraftbedrock` 
+- Update tests with actual assertions for easier reading:
+  Search in tests for `if got != want`, `if err != nil` or , `if err == nil`
