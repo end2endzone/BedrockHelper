@@ -10,9 +10,7 @@ import (
 	lib "bedrock_helper/libbedrockpacks"
 )
 
-const usageText = `bedrock_helper - install and manage Minecraft Bedrock add-on packs.
-
-Usage:
+const usageText = `Usage:
   bedrock_helper --install <path> [--server-location <dir>]
   bedrock_helper --uninstall <path-or-uuid> [--server-location <dir>]
   bedrock_helper --find-addons <path>
@@ -56,6 +54,9 @@ func main() {
 }
 
 func run(args []string) int {
+	fmt.Fprintf(os.Stderr, "bedrock_helper - install and manage Minecraft Bedrock add-on packs.\n")
+	fmt.Fprintf(os.Stderr, "Version %s.\n\n", GetProductVersion())
+
 	fs := flag.NewFlagSet("bedrock_helper", flag.ContinueOnError)
 	fs.SetOutput(os.Stdout)
 	fs.Usage = func() { fmt.Fprint(os.Stdout, usageText) }

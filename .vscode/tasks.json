@@ -7,9 +7,9 @@
             "options": {
                 "cwd": "${workspaceFolder}"
             },
-            "command": "rm -rf bin/",
+            "command": "./ci/linux/clean.sh",
             "windows": {
-                "command": "if (Test-Path bin) { Remove-Item -Recurse -Force bin }"
+                "command": "./ci/windows/clean.bat"
             },
             "problemMatcher": [],
             "group": "none",
@@ -26,11 +26,11 @@
             "label": "go: build",
             "type": "shell",
             "options": {
-                "cwd": "${workspaceFolder}/src"
+                "cwd": "${workspaceFolder}"
             },
-            "command": "go build -o ../bin/bedrock_helper ./cmd/bedrock_helper",
+            "command": "./ci/linux/build.sh",
             "windows": {
-                "command": "go build -o ../bin/bedrock_helper.exe ./cmd/bedrock_helper"
+                "command": "./ci/windows/build.bat"
             },
             "problemMatcher": [
                 "$go"
@@ -76,9 +76,12 @@
             "label": "go: test",
             "type": "shell",
             "options": {
-                "cwd": "${workspaceFolder}/src"
+                "cwd": "${workspaceFolder}"
             },
-            "command": "go test -v ./...",
+            "command": "./ci/linux/test.sh",
+            "windows": {
+                "command": "./ci/windows/test.bat"
+            },
             "problemMatcher": [
                 "$go"
             ],
