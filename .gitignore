@@ -2,14 +2,7 @@
 # https://github.com/github/gitignore/blob/main/community/Golang/Go.AllowList.gitignore
 #
 # Binaries for programs and plugins
-*.exe
-*.exe~
-*.dll
-*.so
-*.dylib
-
-# Test binary, built with `go test -c`
-*.test
+bin/*
 
 # Code coverage profiles and other test artifacts
 *.out
@@ -31,5 +24,3 @@ go.work.sum
 # .idea/
 # .vscode/
 
-/src/bin
-/bin
