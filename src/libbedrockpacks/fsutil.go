@@ -121,3 +121,53 @@ func fileExists(path string) bool {
 	_ /*info*/, err := os.Stat(path)
 	return err == nil
 }
+
+// GetFileSize returns the size of a file in bytes or an error.
+func GetFileSize(path string) (int64, error) {
+	info, err := os.Stat(path)
+	if err != nil {
+		return 0, err
+	}
+	return info.Size(), nil
+}
+
+// GetFileSize returns the size of a file in bytes.
+// Returns 0 if the file does not exists or there is an error.
+func GetFileSizeSafe(path string) int64 {
+	info, err := os.Stat(path)
+	if err != nil {
+		return 0
+	}
+	return info.Size()
+}
+
+// GetDirectoryContentAbsolutePaths recursively walks through the given directory to find all the files under the given directory.
+// Returns a list of all the files found in absolute paths.
+func GetDirectoryContentAbsolutePaths(dirPath string) ([]string, error) {
+	var fileNames []string
+
+	// ReadDir reads the directory named by dirname and returns a list of directory entries sorted by filename.
+	entries, err := os.ReadDir(dirPath)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, entry := range entries {
+		// Construct the full path of the entry
+		fullPath := filepath.Join(dirPath, entry.Name())
+
+		if entry.IsDir() {
+			// If it's a directory, recursively call the function
+			subDirFiles, err := GetDirectoryContentAbsolutePaths(fullPath)
+			if err != nil {
+				return nil, err
+			}
+			fileNames = append(fileNames, subDirFiles...)
+		} else {
+			// If it's a file, append its name to the list
+			fileNames = append(fileNames, fullPath)
+		}
+	}
+
+	return fileNames, nil
+}
