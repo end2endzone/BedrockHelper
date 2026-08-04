@@ -1,0 +1,11 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "Solo RP",
+    "uuid": "66666666-6666-6666-6666-666666666666",
+    "version": [2, 1, 0]
+  },
+  "modules": [
+    {"type": "resources", "uuid": "77777777-7777-7777-7777-777777777777", "version": [2,1,0]}
+  ]
+}
