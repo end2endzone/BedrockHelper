@@ -70,3 +70,15 @@ func TestGetServer(t *testing.T) {
 		require.Nil(t, server)
 	})
 }
+
+/*
+func TestBuildServerWithAllPacks(t *testing.T) {
+	server := Server{Path: getServerFixturePath(t, "server_with_installed_packs")}
+	world, err := server.ActiveWorld()
+	require.NoError(t, err)
+
+	world.InstallAddon(getAddonFixturePath(t, "behavior_only.mcpack"))
+	world.InstallAddon(getAddonFixturePath(t, "foobar.mcaddon"))
+	world.InstallAddon(getAddonFixturePath(t, "solo.mcpack"))
+}
+*/

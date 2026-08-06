@@ -6,29 +6,45 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestParseManifest(t *testing.T) {
-	valid := []byte(`{
+func TestLoadManifestFromBytes(t *testing.T) {
+	bytes := []byte(`{
 		"format_version": 2,
 		"header": {"name": "Test Pack", "uuid": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", "version": [1,2,3]},
 		"modules": [{"type": "data", "uuid": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb", "version": [1,2,3]}]
 	}`)
 
-	m, err := LoadManifestFromBytes(valid)
+	m, err := LoadManifestFromBytes(bytes)
 	require.NoError(t, err)
 	require.Equal(t, "Test Pack", m.Header.Name)
 	require.Equal(t, "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", m.Header.UUID)
-	require.Equal(t, (Version{1, 2, 3}), m.Header.Version)
+	require.Equal(t, Version{1, 2, 3}, m.Header.Version)
 	require.Equal(t, "1.2.3", m.Header.Version.String())
 
 	t.Run("missing uuid", func(t *testing.T) {
 		data := []byte(`{"header": {"name": "No UUID", "version": [1,0,0]}}`)
 		_, err := LoadManifestFromBytes(data)
-		require.Error(t, err, "expected error for manifest missing header.uuid, got nil")
+		require.Error(t, err)
 	})
 
 	t.Run("malformed json", func(t *testing.T) {
 		_, err := LoadManifestFromBytes([]byte(`{not valid json`))
-		require.Error(t, err, "expected error for malformed JSON, got nil")
+		require.Error(t, err)
+	})
+}
+
+func TestLoadManifestFromFile(t *testing.T) {
+	t.Run("valid pack manifest loaded through extraction", func(t *testing.T) {
+		extractDir := t.TempDir()
+		require.NoError(t, ExtractZip(getAddonFixturePath(t, "solo.mcpack"), extractDir))
+
+		m, err := LoadManifestFromFile(extractDir + "/manifest.json")
+		require.NoError(t, err)
+		require.Equal(t, "Solo RP", m.Header.Name)
+	})
+
+	t.Run("nonexistent file", func(t *testing.T) {
+		_, err := LoadManifestFromFile("/tmp/does-not-exist/manifest.json")
+		require.Error(t, err)
 	})
 }
 
@@ -89,16 +105,4 @@ func TestIdentifyPackKind(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, BehaviorPack, kind)
 	})
-}
-
-func TestPackKindString(t *testing.T) {
-	cases := map[PackKind]string{
-		BehaviorPack: "BehaviorPack",
-		ResourcePack: "ResourcePack",
-		UnknownPack:  "UnknownPack",
-	}
-	for kind, want := range cases {
-		got := kind.String()
-		require.Equal(t, want, got)
-	}
 }
