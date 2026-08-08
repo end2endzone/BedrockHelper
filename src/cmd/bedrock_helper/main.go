@@ -54,8 +54,8 @@ func main() {
 }
 
 func run(args []string) int {
-	fmt.Fprintf(os.Stderr, "bedrock_helper - install and manage Minecraft Bedrock add-on packs.\n")
-	fmt.Fprintf(os.Stderr, "Version %s.\n\n", GetProductVersion())
+	fmt.Fprintf(os.Stdout, "bedrock_helper - install and manage Minecraft Bedrock add-on packs.\n")
+	fmt.Fprintf(os.Stdout, "Version %s.\n\n", GetProductVersion())
 
 	fs := flag.NewFlagSet("bedrock_helper", flag.ContinueOnError)
 	fs.SetOutput(os.Stdout)
