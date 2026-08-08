@@ -1,4 +1,2 @@
 - Rename library/package from `libbedrockpacks` to `libminecraftbedrock` 
-- Update tests with actual assertions for easier reading:
-  Search in tests for `if got != want`, `if err != nil` or , `if err == nil`
 - Fixed the bug where installing an addon will create official directories with the pattern `"bedrock_helper_install_*"`. Replace by creating an actual name.
