@@ -136,9 +136,10 @@ func TestMoveDir(t *testing.T) {
 		"bedrock_server",
 		"bedrock_server.exe",
 		"server.properties",
-		"worlds\\Bedrock level\\.keep",
+		"worlds/Bedrock level/.keep",
 	}
 	sort.Strings(expectedRelativeFilesPath)
+	filePathsClean(expectedRelativeFilesPath)
 
 	// Compare with the expected content
 	require.Equal(t, len(actualMovedFiles), len(actualMovedFiles))
@@ -165,4 +166,10 @@ func TestCopyFile(t *testing.T) {
 
 	// The original file must still exist after a copy (unlike moveDir).
 	assertFileExists(t, src)
+}
+
+func filePathsClean(paths []string) {
+	for i, path := range paths {
+		paths[i] = filepath.Clean(path)
+	}
 }
