@@ -133,7 +133,7 @@ func run(args []string) int {
 	case listAddons:
 		err = cmdListAddons(serverLocation)
 	case resolvePack != "":
-		err = cmdResolvePack(resolvePack, serverLocation)
+		err = cmdResolveAddon(resolvePack, serverLocation)
 	case installAll:
 		err = cmdInstallAll(serverLocation)
 	case uninstallAll:
@@ -225,9 +225,9 @@ func cmdListAddons(serverLocation string) error {
 	return w.Flush()
 }
 
-// cmdResolvePack search the target server for an add-on file that contains a pack matching <uuid>.
-func cmdResolvePack(uuid, serverLocation string) error {
-	path, err := lib.ResolvePackByUUID(uuid, serverLocation)
+// cmdResolveAddon search the target server for an add-on file that contains a pack matching <uuid>.
+func cmdResolveAddon(uuid, serverLocation string) error {
+	path, err := lib.ResolveAddonByUUID(uuid, serverLocation)
 	if err != nil {
 		return err
 	}

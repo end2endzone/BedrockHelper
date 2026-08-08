@@ -16,20 +16,18 @@ func TestFindAddonsInDir_NonRecursive(t *testing.T) {
 	names := baseNames(got)
 	sort.Strings(names)
 
-	// File corrupted.mcaddon has the right extension but is not a valid zip, so it
-	// must be excluded. zip_with_no_manifest.zip is a valid zip (even without a
-	// manifest) so it counts as a discoverable add-on file.
+	// Get the list of addons
+	// File corrupted.mcaddon has the right extension but is not a valid zip
 	want := []string{
 		"behavior_only.mcpack",
 		"foobar.mcaddon",
-		"zip_with_no_manifest.zip",
-		"solo.mcpack"}
+		"solo.mcpack",
+		"zip_with_no_manifest.zip", // is a valid zip (without a manifest) so it counts as a discoverable add-on file
+	}
 	sort.Strings(want)
 
-	require.Equal(t, len(want), len(names))
-	for i := range names {
-		require.Equal(t, want[i], names[i], "failure at index %v", i)
-	}
+	// Assert both list are equals
+	require.ElementsMatch(t, want, names)
 }
 
 func TestFindAddonsInDir_Recursive(t *testing.T) {
@@ -48,17 +46,15 @@ func TestFindAddonsInDir_Recursive(t *testing.T) {
 		"zip_with_no_manifest.zip"}
 	sort.Strings(want)
 
-	require.Equal(t, len(want), len(names), "want={%v},  got={%v}", want, names)
-	for i := range names {
-		require.Equal(t, want[i], names[i], "failure at index %v", i)
-	}
+	// Assert both list are equals
+	require.ElementsMatch(t, want, names)
 }
 
 func TestFindAddonsInDir_EmptyDir(t *testing.T) {
 	dir := t.TempDir()
 	got, err := FindAddonsInDir(dir, true)
 	require.NoError(t, err)
-	require.Equal(t, 0, len(got))
+	require.Empty(t, got)
 }
 
 func baseNames(paths []string) []string {

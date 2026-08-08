@@ -5,11 +5,11 @@ import (
 	"strings"
 )
 
-// ResolvePackByUUID searches serverDir (recursively) for an add-on file containing a pack whose manifest UUID matches the given UUID.
+// ResolveAddonByUUID searches serverDir (recursively) for an add-on file containing a pack whose manifest UUID matches the given UUID.
 // Returns the path of the first matching add-on file found.
 // Returns an empty path if no match is found.
 // Returns an error otherwise.
-func ResolvePackByUUID(uuid string, serverDir string) (string, error) {
+func ResolveAddonByUUID(uuid string, serverDir string) (string, error) {
 	err := ValidateServerDirectory(serverDir)
 	if err != nil {
 		return "", err

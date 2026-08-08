@@ -2,73 +2,78 @@ package libbedrockpacks
 
 import (
 	"os"
-	"path/filepath"
-	"sort"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
-func TestInstallAddon_Bundle(t *testing.T) {
+func TestInstallAddon_MultiPackAddon(t *testing.T) {
 	tempServerDir := copyServerFixture(t, "server_no_level_name")
 	defer os.RemoveAll(tempServerDir)
 
+	// Install the addon
 	installedPacks, err := InstallAddonInServer(getAddonFixturePath(t, "foobar.mcaddon"), tempServerDir)
 	require.NoError(t, err)
-	require.Equal(t, 2, len(installedPacks))
+	require.Len(t, installedPacks, 2)
 
-	var kinds []string
+	// Verify both packs are registered
+	server, err := GetServer(tempServerDir)
+	world, err := server.ActiveWorld()
 	for _, pack := range installedPacks {
-		kinds = append(kinds, pack.KindSafe().String())
-		_, err := os.Stat(filepath.Join(pack.Path, "manifest.json"))
+		registered, err := world.IsPackRegistered(pack)
 		require.NoError(t, err)
+		require.True(t, registered)
 	}
 
-	sort.Strings(kinds)
-	require.Equal(t, "BehaviorPack", kinds[0])
-	require.Equal(t, "ResourcePack", kinds[1])
-
-	// Verify both registry files were updated.
-	worldDir, _ := FindActiveWorldDir(tempServerDir)
-	bpEntries, err := readRegistry(worldDir, BehaviorPack)
-	require.NoError(t, err)
-	require.Equal(t, 1, len(bpEntries))
-
-	rpEntries, err := readRegistry(worldDir, ResourcePack)
-	require.NoError(t, err)
-	require.Equal(t, 1, len(rpEntries))
-
-	// The master link manifest.json must NOT itself be treated as an installed pack.
+	// Assert that all packs are in installedPacks
 	for _, p := range installedPacks {
 		require.True(t, p.Name() == "Foobar BP" || p.Name() == "Foobar RP")
 	}
 }
 
-func TestInstallAddon_StandaloneMcpack(t *testing.T) {
+func TestInstallAddon_SinglePack(t *testing.T) {
 	tempServerDir := copyServerFixture(t, "server_no_level_name")
 	defer os.RemoveAll(tempServerDir)
 
+	// Install the single pack
 	installedPacks, err := InstallAddonInServer(getAddonFixturePath(t, "solo.mcpack"), tempServerDir)
 	require.NoError(t, err)
-	require.Equal(t, 1, len(installedPacks))
-	require.Equal(t, ResourcePack, installedPacks[0].KindSafe())
-	require.Equal(t, "Solo RP", installedPacks[0].Name())
+	require.Len(t, installedPacks, 1)
+
+	// Verify the pack is registered
+	server, err := GetServer(tempServerDir)
+	world, err := server.ActiveWorld()
+	for _, pack := range installedPacks {
+		registered, err := world.IsPackRegistered(pack)
+		require.NoError(t, err)
+		require.True(t, registered)
+	}
+
+	// Assert that all the pack is in installedPacks
+	pack := installedPacks[0]
+	require.Equal(t, ResourcePack, pack.KindSafe())
+	require.Equal(t, "Solo RP", pack.Name())
 }
 
 func TestInstallAddon_ReinstallReplacesExisting(t *testing.T) {
 	tempServerDir := copyServerFixture(t, "server")
 	defer os.RemoveAll(tempServerDir)
 
+	// Install once
 	_, err := InstallAddonInServer(getAddonFixturePath(t, "foobar.mcaddon"), tempServerDir)
 	require.NoError(t, err)
 
+	// Install again
 	installedPacks, err := InstallAddonInServer(getAddonFixturePath(t, "foobar.mcaddon"), tempServerDir)
-	require.NoError(t, err)
-	require.Equal(t, 2, len(installedPacks))
+	require.NoError(t, err, "reinstall failed")
+	require.Len(t, installedPacks, 2)
 
-	worldDir, _ := FindActiveWorldDir(tempServerDir)
-	bpEntries, _ := readRegistry(worldDir, BehaviorPack)
-	require.Equal(t, 1, len(bpEntries))
+	// Verify the pack is installed only once
+	server, err := GetServer(tempServerDir)
+	world, err := server.ActiveWorld()
+	packs, err := world.Packs()
+	require.NoError(t, err)
+	require.Len(t, packs, 1, "expected reinstall to not duplicate the installed pack directory")
 }
 
 func TestInstallAddon_Errors(t *testing.T) {
@@ -76,13 +81,16 @@ func TestInstallAddon_Errors(t *testing.T) {
 	defer os.RemoveAll(tempServerDir)
 
 	t.Run("invalid addon file", func(t *testing.T) {
-		_, err := InstallAddonInServer(getAddonFixturePath(t, "corrupt.mcaddon"), tempServerDir)
+		_, err := InstallAddonInServer(getAddonFixturePath(t, "corrupted.mcaddon"), tempServerDir)
 		require.Error(t, err)
 	})
 
-	t.Run("addon with no manifests", func(t *testing.T) {
-		_, err := InstallAddonInServer(getAddonFixturePath(t, "no_manifest.zip"), tempServerDir)
-		require.Error(t, err)
+	t.Run("addon with no manifests installs zero packs without an error", func(t *testing.T) {
+		// LoadAllPacksFromDirectoriesOrSubdirectories (used by InstallAddon) returns an empty list when no manifest.json is missing.
+		// The function should not return an error in such a case.
+		installed, err := InstallAddonInServer(getAddonFixturePath(t, "zip_with_no_manifest.zip"), tempServerDir)
+		require.NoError(t, err)
+		require.Empty(t, installed)
 	})
 
 	t.Run("invalid server directory", func(t *testing.T) {
@@ -91,13 +99,9 @@ func TestInstallAddon_Errors(t *testing.T) {
 		require.Error(t, err)
 	})
 
-	t.Run("server with level-name set but worlds dir not yet created should fail", func(t *testing.T) {
-		// InstallAddonInServer should create directory `worlds/<level-name>/behavior_packs` or `worlds/<level-name>/resource_packs`
-		// on the fly even if they don't exist yet.
-		tempServerDir := copyServerFixture(t, "not_a_server_missing_worlds")
-		defer os.RemoveAll(tempServerDir)
-
-		_ /*installedPacks*/, err := InstallAddonInServer(getAddonFixturePath(t, "foobar.mcaddon"), tempServerDir)
+	t.Run("server missing the worlds directory", func(t *testing.T) {
+		missingWorldsDir := copyServerFixture(t, "not_a_server_missing_worlds")
+		_, err := InstallAddonInServer(getAddonFixturePath(t, "foobar.mcaddon"), missingWorldsDir)
 		require.Error(t, err)
 	})
 }

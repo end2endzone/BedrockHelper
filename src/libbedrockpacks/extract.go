@@ -109,8 +109,7 @@ func FindManifestsRelativePathInAddon(addonPath string) ([]string, error) {
 	return manifests, nil
 }
 
-// readZipEntry reads and returns the raw bytes of a single named entry
-// inside a zip archive.
+// readZipEntry reads and returns the raw bytes of a single named entry inside a zip archive.
 func readZipEntry(zipPath, entryName string) ([]byte, error) {
 	r, err := zip.OpenReader(zipPath)
 	if err != nil {

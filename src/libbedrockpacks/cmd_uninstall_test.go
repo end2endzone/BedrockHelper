@@ -1,7 +1,6 @@
 package libbedrockpacks
 
 import (
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -9,32 +8,32 @@ import (
 
 func TestUninstallAddon(t *testing.T) {
 	tempServerDir := copyServerFixture(t, "server")
-	defer os.RemoveAll(tempServerDir)
 
-	_, err := InstallAddonInServer(getAddonFixturePath(t, "foobar.mcaddon"), tempServerDir)
-	require.NoError(t, err)
+	// First install
+	installedPacks, err := InstallAddonInServer(getAddonFixturePath(t, "foobar.mcaddon"), tempServerDir)
+	require.NoError(t, err, "setup install failed")
+	require.Len(t, installedPacks, 2)
 
+	// Then uninstall
 	uninstalledPacks, err := UninstallAddonInServer(getAddonFixturePath(t, "foobar.mcaddon"), tempServerDir)
 	require.NoError(t, err)
-	require.Equal(t, 2, len(uninstalledPacks), "expected 2 packs uninstalled")
+	require.Len(t, uninstalledPacks, 2)
 
-	// Verify both registry files were deleted.
-	worldDir, _ := FindActiveWorldDir(tempServerDir)
-	bpEntries, _ := readRegistry(worldDir, BehaviorPack)
-	rpEntries, _ := readRegistry(worldDir, ResourcePack)
-	require.Equal(t, 0, len(bpEntries))
-	require.Equal(t, 0, len(rpEntries))
+	// Get installed packs
+	server, err := GetServer(tempServerDir)
+	world, err := server.ActiveWorld()
+	remaining, err := world.Packs()
+	require.NoError(t, err)
+	require.Empty(t, remaining, "expected no packs left installed after uninstall")
 
-	// Assert that each uninstalled pack's directory were deleted
+	// Assert that each uninstalled pack's directory was deleted.
 	for _, p := range uninstalledPacks {
-		_, err := os.Stat(p.Path)
-		require.True(t, os.IsNotExist(err), "expected pack directory %q to be removed, stat err = %v", p.Path, err)
+		assertDirNotExists(t, p.Path)
 	}
 }
 
 func TestUninstallAddon_NotInstalled(t *testing.T) {
 	tempServerDir := copyServerFixture(t, "server")
-	defer os.RemoveAll(tempServerDir)
 
 	// Never installed, so this should fail to find the pack in the world.
 	_, err := UninstallAddonInServer(getAddonFixturePath(t, "foobar.mcaddon"), tempServerDir)
@@ -43,24 +42,25 @@ func TestUninstallAddon_NotInstalled(t *testing.T) {
 
 func TestUninstallPackByUUID(t *testing.T) {
 	tempServerDir := copyServerFixture(t, "server_with_installed_pack")
-	defer os.RemoveAll(tempServerDir)
 
+	// Uninstall with UUID
 	pack, err := UninstallPackInServerByUUID("2bda6085-9d71-4d8a-9b9f-74e07b30459c", tempServerDir)
 	require.NoError(t, err)
 	require.Equal(t, "Foobar BP", pack.Name())
 	require.Equal(t, BehaviorPack, pack.KindSafe())
 
-	worldDir, _ := FindActiveWorldDir(tempServerDir)
-	entries, _ := readRegistry(worldDir, BehaviorPack)
-	require.Equal(t, 0, len(entries))
+	// Get installed packs
+	server, err := GetServer(tempServerDir)
+	world, err := server.ActiveWorld()
+	registered, err := world.IsPackRegistered(pack)
+	require.NoError(t, err)
+	require.False(t, registered)
 
-	_, err = os.Stat(pack.Path)
-	require.True(t, os.IsNotExist(err), "expected pack directory to be removed")
+	assertDirNotExists(t, pack.Path)
 }
 
 func TestUninstallPackByUUID_UnknownUUID(t *testing.T) {
 	tempServerDir := copyServerFixture(t, "server_with_installed_pack")
-	defer os.RemoveAll(tempServerDir)
 
 	_, err := UninstallPackInServerByUUID("00000000-0000-0000-0000-000000000000", tempServerDir)
 	require.Error(t, err)
@@ -68,11 +68,10 @@ func TestUninstallPackByUUID_UnknownUUID(t *testing.T) {
 
 func TestInstallThenUninstallByUUID(t *testing.T) {
 	tempServerDir := copyServerFixture(t, "server_no_level_name")
-	defer os.RemoveAll(tempServerDir)
 
 	installed, err := InstallAddonInServer(getAddonFixturePath(t, "behavior_only.mcpack"), tempServerDir)
 	require.NoError(t, err)
-	require.Equal(t, 1, len(installed))
+	require.Len(t, installed, 1)
 
 	pack, err := UninstallPackInServerByUUID(installed[0].UUID(), tempServerDir)
 	require.NoError(t, err)

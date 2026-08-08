@@ -13,7 +13,7 @@ func TestListInstalledPacks(t *testing.T) {
 
 	packs, err := ListInstalledPacks(tempServerDir)
 	require.NoError(t, err)
-	require.Equal(t, 1, len(packs))
+	require.Len(t, packs, 1)
 	require.Equal(t, "2bda6085-9d71-4d8a-9b9f-74e07b30459c", packs[0].UUID())
 	require.Equal(t, "Foobar BP", packs[0].Name())
 	require.Equal(t, BehaviorPack, packs[0].KindSafe())
@@ -25,7 +25,7 @@ func TestListInstalledPacks_EmptyServer(t *testing.T) {
 
 	packs, err := ListInstalledPacks(tempServerDir)
 	require.NoError(t, err)
-	require.Equal(t, 0, len(packs))
+	require.Empty(t, packs)
 }
 
 func TestListInstalledPacks_AfterInstallAndUninstall(t *testing.T) {
@@ -33,18 +33,18 @@ func TestListInstalledPacks_AfterInstallAndUninstall(t *testing.T) {
 	defer os.RemoveAll(tempServerDir)
 
 	_, err := InstallAddonInServer(getAddonFixturePath(t, "foobar.mcaddon"), tempServerDir)
-	require.NoError(t, err)
+	require.NoError(t, err, "install failed")
 
 	packs, err := ListInstalledPacks(tempServerDir)
 	require.NoError(t, err)
-	require.Equal(t, 2, len(packs))
+	require.Len(t, packs, 2)
 
 	_, err = UninstallAddonInServer(getAddonFixturePath(t, "foobar.mcaddon"), tempServerDir)
-	require.NoError(t, err)
+	require.NoError(t, err, "uninstall failed")
 
 	packs, err = ListInstalledPacks(tempServerDir)
 	require.NoError(t, err)
-	require.Equal(t, 0, len(packs))
+	require.Empty(t, packs)
 }
 
 func TestListInstalledPacks_InvalidServer(t *testing.T) {
