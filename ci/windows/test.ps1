@@ -5,4 +5,5 @@ $ProjectRoot = "$PSScriptRoot/../.."
 
 Set-Location $ProjectRoot/src
 
-go test -v ./...
+# go test -v ./...
+gotestsum --format github-actions --junitfile ..\test-report.xml

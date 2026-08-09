@@ -26,3 +26,6 @@ go.work.sum
 
 # Disposable copy of src/testdata used by the .vscode/launch.json debug configurations.
 .debug-sandbox/
+
+# Test report file
+test-report.xml
