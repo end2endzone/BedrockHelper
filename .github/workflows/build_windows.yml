@@ -24,7 +24,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
 
     - name: Configure GIT
       working-directory: ${{env.GITHUB_WORKSPACE}}
@@ -35,13 +35,13 @@ jobs:
         git submodule update --init --recursive
 
     - name: Setup python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v7
       with:
         python-version: '3.x' # Version range or exact version of a Python version to use, using SemVer's version range syntax
         architecture: 'x64' # optional x64 or x86. Defaults to x64 if not specified
 
     - name: Set up Go
-      uses: actions/setup-go@v5
+      uses: actions/setup-go@v7
       with:
         go-version-file: src/go.mod
 
@@ -66,7 +66,7 @@ jobs:
         FILE_PATH: ./ci/github/tests_not_available.badge.json
         GIST_FILENAME: "${{env.GIT_REPOSITORY}}.${{env.GIT_BRANCH}}.${{env.GITHUB_WORKFLOW}}.json"
       shell: pwsh
-      run: .\ci\linux\upload-to-gist.ps1
+      run: .\ci\windows\upload-to-gist.ps1
 
     - name: Install gotestsum
       working-directory: ${{env.GITHUB_WORKSPACE}}
@@ -106,7 +106,7 @@ jobs:
         FILE_PATH: "badge.json"
         GIST_FILENAME: "${{env.GIT_REPOSITORY}}.${{env.GIT_BRANCH}}.${{env.GITHUB_WORKFLOW}}.json"
       shell: pwsh
-      run: .\ci\linux\upload-to-gist.ps1
+      run: .\ci\windows\upload-to-gist.ps1
 
     - name: Archive test results
       if: success() || steps.unit_tests.conclusion == 'failure'
