@@ -57,7 +57,7 @@ def getColorFromLevel(level):
   return color
 
 def main():
-  print("maketestbadge v1.1")
+  print("maketestbadge v1.2")
   
   # Validate input file
   if len(sys.argv)  == 2:
@@ -88,7 +88,7 @@ def main():
   try:
     tests_count = root.attrib['tests']
     failures_count = root.attrib['failures']
-    disabled_count = root.attrib['disabled']
+    disabled_count = root.attrib.get('disabled', 0) # Default to 0 if attribute not found. Some language does not allow disabled or skipped tests.
   except KeyError as err:
     err.msg = "Failed to find count of tests, failures or disabled values."
     #raise
