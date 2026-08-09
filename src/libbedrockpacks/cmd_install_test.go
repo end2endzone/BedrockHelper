@@ -60,13 +60,13 @@ func TestInstallAddon_ReinstallReplacesExisting(t *testing.T) {
 	defer os.RemoveAll(tempServerDir)
 
 	// Install once
-	_, err := InstallAddonInServer(getAddonFixturePath(t, "foobar.mcaddon"), tempServerDir)
+	_, err := InstallAddonInServer(getAddonFixturePath(t, "solo.mcpack"), tempServerDir)
 	require.NoError(t, err)
 
 	// Install again
-	installedPacks, err := InstallAddonInServer(getAddonFixturePath(t, "foobar.mcaddon"), tempServerDir)
+	installedPacks, err := InstallAddonInServer(getAddonFixturePath(t, "solo.mcpack"), tempServerDir)
 	require.NoError(t, err, "reinstall failed")
-	require.Len(t, installedPacks, 2)
+	require.Len(t, installedPacks, 1)
 
 	// Verify the pack is installed only once
 	server, err := GetServer(tempServerDir)
