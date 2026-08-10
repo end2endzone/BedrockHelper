@@ -118,6 +118,5 @@ jobs:
       uses: actions/upload-artifact@v7
       with:
         name: Installation packages.
-        #path: bin/bedrock_helper-${{env.PRODUCT_VERSION}}-*.*
-        path: bin/bedrock_helper
+        path: bin/bedrock_helper-*-* # bedrock_helper-$OS_TYPE-$CPU_ARCHITECTURE
         if-no-files-found: error
