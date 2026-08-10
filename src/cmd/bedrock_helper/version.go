@@ -16,6 +16,6 @@ type ProductVersion struct {
 }
 
 func GetProductVersion() string {
-	msg := fmt.Sprintf("v%s (%s) compiled on %s", Version, CommitHash, BuildDate)
+	msg := fmt.Sprintf("%s (%s) compiled on %s", Version, CommitHash, BuildDate)
 	return msg
 }
