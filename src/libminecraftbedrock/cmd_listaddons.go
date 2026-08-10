@@ -1,4 +1,4 @@
-package libbedrockpacks
+package libminecraftbedrock
 
 // ListInstalledPacks lists the packs currently registered for a given Minecraft Bedrock server located at serverDir.
 // For each registered UUID, it attempts to resolve the name of the pack by scanning the corresponding behavior_packs/ or

@@ -1,4 +1,4 @@
-package libbedrockpacks
+package libminecraftbedrock
 
 // InstallAddonInServer installs every pack contained in the given add-on file (addonPath)
 // into the given Minecraft Bedrock server located at serverDir.

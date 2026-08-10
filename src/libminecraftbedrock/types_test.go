@@ -1,4 +1,4 @@
-package libbedrockpacks
+package libminecraftbedrock
 
 import (
 	"testing"
