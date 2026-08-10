@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"text/tabwriter"
 
-	lib "bedrock_helper/libbedrockpacks"
+	lib "bedrock_helper/libminecraftbedrock"
 )
 
 const usageText = `Usage:

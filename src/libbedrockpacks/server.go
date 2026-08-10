@@ -1,4 +1,4 @@
-package libbedrockpacks
+package libminecraftbedrock
 
 type Server struct {
 	Path string

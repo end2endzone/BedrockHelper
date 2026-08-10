@@ -1,4 +1,4 @@
-package libbedrockpacks
+package libminecraftbedrock
 
 import (
 	"os"
@@ -15,7 +15,7 @@ func testdataDir(t *testing.T) string {
 	wd, err := os.Getwd()
 	require.NoError(t, err, "failed to get working directory")
 
-	// This file lives in <module>/libbedrockpacks, so testdata is a sibling of that directory.
+	// This file lives in <module>/libminecraftbedrock, so testdata is a sibling of that directory.
 	return filepath.Join(wd, "..", "testdata")
 }
 
