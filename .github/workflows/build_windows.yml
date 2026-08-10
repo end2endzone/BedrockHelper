@@ -15,16 +15,6 @@ jobs:
     # https://help.github.com/en/actions/reference/workflow-syntax-for-github-actions#jobsjob_idruns-on
     runs-on: windows-latest
 
-    strategy:
-      matrix:
-        # Define GOARCH as a matrix with amd64 and arm64 values
-        goarch: [amd64, arm64]
-
-    # Define GOOS as a constant and map GOARCH dynamically
-    env:
-      GOOS: windows
-      GOARCH: ${{ matrix.goarch }}
-
     steps:
     - name: Checkout repository
       uses: actions/checkout@v7
@@ -76,7 +66,18 @@ jobs:
       shell: cmd
       run: go install gotest.tools/gotestsum@latest
 
-    - name: Build
+    - name: Build windows amd64
+      env:
+        GOOS: windows
+        GOARCH: amd64
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      shell: cmd
+      run: call ci\windows\build.bat
+
+    - name: Build windows arm64
+      env:
+        GOOS: windows
+        GOARCH: arm64
       working-directory: ${{env.GITHUB_WORKSPACE}}
       shell: cmd
       run: call ci\windows\build.bat
