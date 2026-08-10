@@ -107,7 +107,7 @@ jobs:
       uses: actions/upload-artifact@v7
       with:
         name: unit-test-results
-        path: build/bin/test-report*.xml
+        path: bin/test-report*.xml
 
     - name: Get version
       working-directory: ${{env.GITHUB_WORKSPACE}}
