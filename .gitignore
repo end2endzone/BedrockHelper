@@ -30,3 +30,6 @@ go.work.sum
 # Test report & badge files
 test-report.xml
 badge.json
+
+# Windows folder icon
+desktop.ini
