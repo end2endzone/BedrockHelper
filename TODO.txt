@@ -1,5 +1,4 @@
 - Rename library/package from `libbedrockpacks` to `libminecraftbedrock` 
 - Fixed the bug where installing an addon will create official directories with the pattern `"bedrock_helper_install_*"`. Replace by creating an actual name.
-- Integrate with Github Actions.
 - Create version 0.1.0 tag with binaries so that exec can be downloaded with a curl command.
 - Rename testdata `server` to `server_empty`.
