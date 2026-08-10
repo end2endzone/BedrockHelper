@@ -11,7 +11,7 @@ COMMIT=$(git rev-parse --short HEAD)
 DATE=$(date +%F)
 
 # GOOS
-if [[ -v GOOS ]]; then
+if [[ -n "${GOOS}" ]]; then
     echo "GOOS is set to: $GOOS"
 else
     # Detect OS type
@@ -32,7 +32,7 @@ else
 fi
 
 # GOARCH
-if [[ -v GOARCH ]]; then
+if [[ -n "${GOARCH}" ]]; then
     echo "GOARCH is set to: $GOARCH"
 else
     GOARCH=$(go env GOHOSTARCH)
