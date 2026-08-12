@@ -198,7 +198,7 @@
             "args": [
                 "--install-all",
                 "--server-location",
-                "${workspaceFolder}/.debug-sandbox/testdata/servers/server_with_multiple_packs"
+                "${workspaceFolder}/.debug-sandbox/testdata/servers/server_with_uninstalled_addons"
             ]
         },
         {

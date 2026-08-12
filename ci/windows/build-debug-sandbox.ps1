@@ -10,4 +10,8 @@ New-Item -ItemType Directory -Path .debug-sandbox | Out-Null
 Copy-Item -Recurse src/testdata .debug-sandbox/testdata
 Copy-Item src/testdata/addons/foobar.mcaddon ".debug-sandbox/testdata/servers/server_with_multiple_packs/foobar.mcaddon"
 
+# Testing installing multiple addon at once
+Copy-Item -Recurse src/testdata/servers/server_empty .debug-sandbox/testdata/servers/server_with_uninstalled_addons
+Copy-Item -Recurse src/testdata/addons               .debug-sandbox/testdata/servers/server_with_uninstalled_addons/my-addons-collection
+
 Write-Host "Sandbox ready!"
