@@ -157,6 +157,23 @@ func getOrderedFlags(fs *flag.FlagSet) []*flag.Flag {
 	return flags
 }
 
+// StringSplitAtLast splits a given string at the last occurance of the given separator.
+func StringSplitAtLast(s, separator string) []string {
+	// Find the last occurrence of the separator
+	i := strings.LastIndex(s, separator)
+
+	// If the separator is not found, return the original string as a single-element slice
+	if i == -1 {
+		return []string{s}
+	}
+
+	// Slice the string before and after the last separator
+	return []string{
+		s[:i],
+		s[i+len(separator):],
+	}
+}
+
 // printUsage print a usage string that output each arguments and then examples.
 func printUsage(fs *flag.FlagSet) {
 	output := fs.Output() // os.Stderr
@@ -187,8 +204,12 @@ func printUsage(fs *flag.FlagSet) {
 
 	orderedFlags := getOrderedFlags(fs)
 	for _, f := range orderedFlags {
-		// Split our custom metadata format: "<placeholder>|Description string"
-		parts := strings.SplitN(f.Usage, "|", 2)
+		// Split our custom usage metadata format: `<placeholder>|Description string`.
+		// Using StringSplitAtLast() instead of strings.SplitN(f.Usage, "|", 2) to support
+		// placeholders that contains optional names.
+		// For example `<path|uuid>`.
+		parts := StringSplitAtLast(f.Usage, "|")
+
 		placeholder := ""
 		description := f.Usage
 
@@ -206,12 +227,12 @@ func printUsage(fs *flag.FlagSet) {
 		// Split the description into multiple lines to handle clean indentation alignment
 		lines := strings.Split(description, "\n")
 
-		// Target column where the description text must begin
-		const targetCol = 29
+		// Target column where the 2nd column (description text) must begin
+		const targetCol = 30
 
 		// Print the first line
 		if len(flagStr) < targetCol {
-			// Pad the remaining space up to column 29
+			// Pad the remaining space up to column targetCol
 			padding := strings.Repeat(" ", targetCol-len(flagStr))
 			fmt.Fprintf(output, "%s%s%s\n", flagStr, padding, lines[0])
 		} else {
@@ -225,7 +246,7 @@ func printUsage(fs *flag.FlagSet) {
 			fmt.Fprintf(output, "%s%s\n", padding, lines[0])
 		}
 
-		// Print any multi-line description wrap-arounds exactly at column 29
+		// Print any multi-line description wrap-arounds exactly at column targetCol
 		for i := 1; i < len(lines); i++ {
 			padding := strings.Repeat(" ", targetCol)
 			fmt.Fprintf(output, "%s%s\n", padding, lines[i])
