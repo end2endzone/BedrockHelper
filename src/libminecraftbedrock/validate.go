@@ -136,3 +136,73 @@ func ValidateDirectory(path string) error {
 
 	return nil
 }
+
+// IsValidMcPackFile checks that a given file path is a valid MCPack file.
+func IsValidMcPackFile(path string) bool {
+	// Check by file extension
+	valid := IsValidAddonFileExtension(path)
+	if !valid {
+		return false
+	}
+
+	// Check by peeking at the content
+	valid = IsValidAddonFile(path)
+	if !valid {
+		return false
+	}
+
+	// Check with manifests
+	manifestPaths, err := FindManifestsRelativePathInAddon(path)
+	if err != nil {
+		return false
+	}
+	if len(manifestPaths) != 1 {
+		return false
+	}
+
+	// Check that manifests is at root directory
+	parentDir := filepath.Dir(manifestPaths[0])
+	if parentDir != "." {
+		// Not a MCPack.
+		// This manifest is not at the relative root directory (such as a MCAddon)
+		return false
+	}
+
+	return true
+}
+
+// IsValidMcAddonFile checks that a given file path is a valid MCAddon file.
+func IsValidMcAddonFile(path string) bool {
+	// Check by file extension
+	valid := IsValidAddonFileExtension(path)
+	if !valid {
+		return false
+	}
+
+	// Check by peeking at the content
+	valid = IsValidAddonFile(path)
+	if !valid {
+		return false
+	}
+
+	// Check with manifests
+	manifestPaths, err := FindManifestsRelativePathInAddon(path)
+	if err != nil {
+		return false
+	}
+	if len(manifestPaths) == 0 {
+		return false
+	}
+
+	// Check that each manifests's file is at root directory
+	for _, manifestPath := range manifestPaths {
+		parentDir := filepath.Dir(manifestPath)
+		if parentDir == "." {
+			// Not a MCAddon.
+			// This manifest is at the relative root directory (such as a MCPack)
+			return false
+		}
+	}
+
+	return true
+}

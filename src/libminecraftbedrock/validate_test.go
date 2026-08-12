@@ -92,3 +92,47 @@ func TestIsValidAddonFile(t *testing.T) {
 		}
 	})
 }
+
+func TestIsValidMcPackFile(t *testing.T) {
+	cases := []struct {
+		name     string
+		file     string
+		expected bool
+	}{
+		{"behavior_only.mcpack", "behavior_only.mcpack", true},
+		{"corrupted.mcaddon", "corrupted.mcaddon", false},
+		{"foobar.mcaddon", "foobar.mcaddon", false},
+		{"solo.mcpack", "solo.mcpack", true},
+		{"zip_with_no_manifest.zip", "zip_with_no_manifest.zip", false},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			path := getAddonFixturePath(t, tc.file)
+			actual := IsValidMcPackFile(path)
+			require.Equal(t, tc.expected, actual, "IsValidMcPackFile(%q) returned '%v' but '%v' was expected.", path, actual, tc.expected)
+		})
+	}
+}
+
+func TestIsValidMcAddonFile(t *testing.T) {
+	cases := []struct {
+		name     string
+		file     string
+		expected bool
+	}{
+		{"behavior_only.mcpack", "behavior_only.mcpack", false},
+		{"corrupted.mcaddon", "corrupted.mcaddon", false},
+		{"foobar.mcaddon", "foobar.mcaddon", true},
+		{"solo.mcpack", "solo.mcpack", false},
+		{"zip_with_no_manifest.zip", "zip_with_no_manifest.zip", false},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			path := getAddonFixturePath(t, tc.file)
+			actual := IsValidMcAddonFile(path)
+			require.Equal(t, tc.expected, actual, "IsValidMcAddonFile(%q) returned '%v' but '%v' was expected.", path, actual, tc.expected)
+		})
+	}
+}

@@ -336,20 +336,29 @@ func run(args []string) int {
 	return 0
 }
 
+func printCommandReport(command lib.Command, packs []*lib.Pack, serverLocation string) {
+	fmt.Printf("%sed the following packs:\n", command.String())
+	for _, p := range packs {
+		fmt.Printf("  - %s\n", p.Description())
+	}
+	fmt.Printf("in server %v\n", serverLocation)
+}
+
 // cmdInstall installs the .mcaddon/.mcpack/.zip add-on at <serverLocation>.
 func cmdInstall(addonPath string, serverLocation string) error {
 	installedPacks, err := lib.InstallAddonInServer(addonPath, serverLocation)
 	if err != nil {
 		return err
 	}
-	for _, p := range installedPacks {
-		fmt.Printf("Installed %s", p.Description())
-	}
+
+	// print report
+	printCommandReport(lib.Install, installedPacks, serverLocation)
+
 	return nil
 }
 
-// cmdUninstall uninstalls the add-on at <serverLocation>, or by pack UUID if the original add-on file is unavailable.
-func cmdUninstall(arg string, serverLocation string) error {
+// processUninstall uninstalls the add-on at <serverLocation>, or by pack UUID if the original add-on file is unavailable.
+func processUninstall(arg string, serverLocation string) ([]*lib.Pack, error) {
 	// Check if arg is an addon file path or a UUID.
 
 	// Check if arg is a file path and exists
@@ -357,20 +366,30 @@ func cmdUninstall(arg string, serverLocation string) error {
 	if statErr == nil && !info.IsDir() {
 		uninstalledPacks, err := lib.UninstallAddonInServer(arg, serverLocation)
 		if err != nil {
-			return err
+			return nil, err
 		}
-		for _, pack := range uninstalledPacks {
-			fmt.Printf("Uninstalled %s", pack.Description())
-		}
-		return nil
+
+		return uninstalledPacks, nil
 	}
 
 	// otherwise treat it as a pack UUID.
 	pack, err := lib.UninstallPackInServerByUUID(arg, serverLocation)
 	if err != nil {
+		return nil, err
+	}
+
+	return []*lib.Pack{pack}, nil
+}
+
+func cmdUninstall(arg string, serverLocation string) error {
+	uninstalledPacks, err := processUninstall(arg, serverLocation)
+	if err != nil {
 		return err
 	}
-	fmt.Printf("Uninstalled %s", pack.Description())
+
+	// print report
+	printCommandReport(lib.Uninstall, uninstalledPacks, serverLocation)
+
 	return nil
 }
 
@@ -438,13 +457,22 @@ func cmdInstallAll(serverLocation string) error {
 	}
 
 	// Process each identified addon as if they were specified individually in the command line
+	installedPacks := make([]*lib.Pack, 0)
 	for _, addonPath := range addons {
-		err = cmdInstall(addonPath, serverLocation)
+
+		// Install this addon
+		latestInstalledPacks, err := lib.InstallAddonInServer(addonPath, serverLocation)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "error installing %s: %v\n", filepath.Base(addonPath), err)
 			return err
 		}
+
+		// Append latest installation to total installation list
+		installedPacks = append(installedPacks, latestInstalledPacks...)
 	}
+
+	// print report
+	printCommandReport(lib.Install, installedPacks, serverLocation)
 
 	return nil
 }
@@ -460,13 +488,22 @@ func cmdUninstallAll(serverLocation string) error {
 	}
 
 	// Process each identified addon as if they were specified individually in the command line
+	uninstalledPacks := make([]*lib.Pack, 0)
 	for _, addonPath := range addons {
-		err = cmdUninstall(addonPath, serverLocation)
+
+		// Uninstall this addon
+		latestUninstalledPacks, err := processUninstall(addonPath, serverLocation)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "error uninstalling %s: %v\n", filepath.Base(addonPath), err)
 			return err
 		}
+
+		// Append latest uninstallation to total uninstallation list
+		uninstalledPacks = append(uninstalledPacks, latestUninstalledPacks...)
 	}
+
+	// print report
+	printCommandReport(lib.Uninstall, uninstalledPacks, serverLocation)
 
 	return nil
 }

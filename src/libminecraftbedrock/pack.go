@@ -50,7 +50,7 @@ func (p Pack) Description() string {
 		safeKind = UnknownPack
 	}
 
-	desc := fmt.Sprintf("%s (%s) [%s] uuid=%s -> %s\n", p.Name(), safeKind, p.Manifest.Header.Version, p.Manifest.Header.UUID, p.Path)
+	desc := fmt.Sprintf("%s version %s (%s) uuid=%s", p.Name(), p.Manifest.Header.Version, safeKind, p.Manifest.Header.UUID)
 	return desc
 }
 

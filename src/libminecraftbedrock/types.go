@@ -57,6 +57,24 @@ func (k PackKind) InstallDirName() (string, error) {
 	}
 }
 
+type Command int
+
+const (
+	Install   Command = iota // 0
+	Uninstall                // 1
+)
+
+func (command Command) String() string {
+	switch command {
+	case Install:
+		return "Install"
+	case Uninstall:
+		return "Uninstall"
+	default:
+		return "Unknown"
+	}
+}
+
 // Version represents a Minecraft Bedrock manifest [major, minor, patch] version triplet.
 type Version [3]int
 
