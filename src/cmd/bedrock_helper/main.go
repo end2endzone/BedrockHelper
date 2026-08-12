@@ -96,16 +96,16 @@ func newBedrockFlagSet(cfg *Config) *flag.FlagSet {
 
 	// Bind string flags directly to the struct fields
 	fs.StringVar(&cfg.Install, "install", "", "<path>|Install the .mcaddon/.mcpack/.zip add-on at <path>.")
-	fs.StringVar(&cfg.Uninstall, "uninstall", "", "<path|uuid>|Uninstall the add-on at <path>, or by pack UUID\nif the original add-on file is unavailable.")
-	fs.StringVar(&cfg.FindAddons, "find-addons", "", "<path>|Search the directory at <path> recursively for\nfiles that look like add-on packs and list them.")
-	fs.StringVar(&cfg.ResolvePack, "resolve-pack", "", "<uuid>|Search the target server for an add-on file that\ncontains a pack matching <uuid>.")
+	fs.StringVar(&cfg.Uninstall, "uninstall", "", "<path|uuid>|Uninstall the add-on at <path>, or by pack UUID if the original add-on file is unavailable.")
+	fs.StringVar(&cfg.FindAddons, "find-addons", "", "<path>|Search the directory at <path> recursively for files that look like add-on packs and list them.")
+	fs.StringVar(&cfg.ResolvePack, "resolve-pack", "", "<uuid>|Search the target server for an add-on file that contains a pack matching <uuid>.")
 	fs.StringVar(&cfg.ServerLocation, "server-location", "", "<dir>|Target Minecraft Bedrock server directory.\nOptional; defaults to the current directory.")
 
 	// Bind boolean flags directly to the struct fields
-	fs.BoolVar(&cfg.ListAddons, "list-addons", false, "|List the add-on packs currently registered for\nthe target server.")
-	fs.BoolVar(&cfg.InstallAll, "install-all", false, "|Scan the target server directory for add-on\nfiles and install every one that is found.")
-	fs.BoolVar(&cfg.UninstallAll, "uninstall-all", false, "|Scan the target server directory for add-on\nfiles and uninstall every one that is found.")
-	fs.BoolVar(&cfg.NoHeader, "no-header", false, "|Do not show product error with command.")
+	fs.BoolVar(&cfg.ListAddons, "list-addons", false, "|List the add-on packs currently registered for the target server.")
+	fs.BoolVar(&cfg.InstallAll, "install-all", false, "|Scan the target server directory for add-on files and install every one that is found.")
+	fs.BoolVar(&cfg.UninstallAll, "uninstall-all", false, "|Scan the target server directory for add-on files and uninstall every one that is found.")
+	fs.BoolVar(&cfg.NoHeader, "no-header", false, "|Do not show product header when running a command.")
 	fs.BoolVar(&cfg.Version, "version", false, "|Show the product version.")
 
 	// The flag library automatically registers `--help`, `-help` and `-h` flags.
