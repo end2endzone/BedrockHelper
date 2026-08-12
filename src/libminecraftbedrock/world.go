@@ -197,7 +197,7 @@ func (w World) InstallAddon(addonPath string) ([]*Pack, error) {
 	}
 
 	// Install each packs into the world
-	var installed []*Pack
+	var installedPacks []*Pack
 	for _, pack := range packs {
 
 		newPack, err := w.InstallPack(pack)
@@ -206,10 +206,10 @@ func (w World) InstallAddon(addonPath string) ([]*Pack, error) {
 		}
 
 		// The pack has installed succesfully
-		installed = append(installed, newPack)
+		installedPacks = append(installedPacks, newPack)
 	}
 
-	return installed, nil
+	return installedPacks, nil
 }
 
 // InstallPackInWorld installs the given pack
@@ -317,19 +317,19 @@ func (w World) UninstallAddon(addonPath string) ([]*Pack, error) {
 	}
 
 	// Uninstall each packs from the world
-	var uninstalled []*Pack
+	var uninstalledPack []*Pack
 	for _, pack := range packs {
 
-		uninstalledPack, err := w.UninstallPack(pack)
+		latestUninstalledPack, err := w.UninstallPack(pack)
 		if err != nil {
 			return nil, err
 		}
 
 		// The pack has installed succesfully
-		uninstalled = append(uninstalled, uninstalledPack)
+		uninstalledPack = append(uninstalledPack, latestUninstalledPack)
 	}
 
-	return uninstalled, nil
+	return uninstalledPack, nil
 }
 
 // UninstallPackInWorld uninstalls the given pack

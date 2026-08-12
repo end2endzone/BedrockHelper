@@ -4,12 +4,18 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+
+	"github.com/tailscale/hujson"
 )
 
 // LoadManifestFromBytes parses the raw JSON bytes of a manifest.json file as an AddonManifest structure.
 func LoadManifestFromBytes(data []byte) (*AddonManifest, error) {
 	var m AddonManifest
-	err := json.Unmarshal(data, &m)
+
+	// Filter out comments in json since comments are not supported by standard json Go library.
+	standardizedJsonBytes, err := hujson.Standardize(data)
+
+	err = json.Unmarshal(standardizedJsonBytes, &m)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse manifest.json: %w", err)
 	}
@@ -24,7 +30,7 @@ func LoadManifestFromFile(path string) (*AddonManifest, error) {
 	// Read the manifest's json file
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read %q as a manifest: %w", path, err)
+		return nil, fmt.Errorf("failed to read file %q: %w", path, err)
 	}
 
 	// Parse it as a AddonManifest pointer
