@@ -155,7 +155,14 @@ func printUsage(fs *flag.FlagSet) {
 	`
 	fmt.Fprintln(output, usageText)
 
-	// Print dynamic flags & their descriptions
+	// Print all flags and their descriptions in a 2 columns layout.
+	// Column 0 is the name of the argument and its value descriptor such as `<path>`.
+	// Column 1 is the flag's usage description. The description can contain \n character to force the following text to be displayed on the next line.
+	// For example:
+	// |----------------------------|---------------------------------------------------|
+	// `  --find-addons <path>       Search the directory at <path> recursively for		`
+	// `                             files that look like add-on packs and list them.	`
+
 	fmt.Fprintln(output, "Flags:")
 	fs.VisitAll(func(f *flag.Flag) {
 		// Split our custom metadata format: "<placeholder>|Description string"
@@ -169,7 +176,7 @@ func printUsage(fs *flag.FlagSet) {
 		}
 
 		// Construct flag component (for example "--install <path>")
-		flagStr := "--" + f.Name
+		flagStr := "  --" + f.Name
 		if placeholder != "" {
 			flagStr += " " + placeholder
 		}
@@ -177,12 +184,29 @@ func printUsage(fs *flag.FlagSet) {
 		// Split the description into multiple lines to handle clean indentation alignment
 		lines := strings.Split(description, "\n")
 
-		// Print the first line with a fixed left margin for alignment
-		fmt.Fprintf(output, "  %-27s %s\n", flagStr, lines[0])
+		// Target column where the description text must begin
+		const targetCol = 29
 
-		// Print remaining lines with matching empty alignment space
+		// Print the first line
+		if len(flagStr) < targetCol {
+			// Pad the remaining space up to column 29
+			padding := strings.Repeat(" ", targetCol-len(flagStr))
+			fmt.Fprintf(output, "%s%s%s\n", flagStr, padding, lines[0])
+		} else {
+			// If the flag declaration is too long that it breaks our alignement...
+
+			// Print it on its own line
+			fmt.Fprintln(output, flagStr)
+
+			// Then align the description
+			padding := strings.Repeat(" ", targetCol)
+			fmt.Fprintf(output, "%s%s\n", padding, lines[0])
+		}
+
+		// Print any multi-line description wrap-arounds exactly at column 29
 		for i := 1; i < len(lines); i++ {
-			fmt.Fprintf(output, "                             %s\n", lines[i])
+			padding := strings.Repeat(" ", targetCol)
+			fmt.Fprintf(output, "%s%s\n", padding, lines[i])
 		}
 	})
 	fmt.Fprintln(output)
