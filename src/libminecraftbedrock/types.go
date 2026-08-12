@@ -1,6 +1,11 @@
 package libminecraftbedrock
 
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+	"strconv"
+	"strings"
+)
 
 // PackKind identifies whether a pack found inside an add-on is a behavior or a resource pack.
 type PackKind int
@@ -83,6 +88,47 @@ func (v Version) String() string {
 	return fmt.Sprintf("%d.%d.%d", v[0], v[1], v[2])
 }
 
+// UnmarshalJSON unmarshal a Version from an array of 3 integers (`[1, 2, 3]`) or from a string (`"4.5.6"`).
+// Some manifest specifies versions as string instead of the offical 3 integer array.
+func (v *Version) UnmarshalJSON(data []byte) error {
+	// First, try unmarshaling it as the standard [3]int array
+	var arrayFormat [3]int
+	if err := json.Unmarshal(data, &arrayFormat); err == nil {
+		*v = Version(arrayFormat)
+		return nil
+	}
+
+	// If that fails, handle the string format (for example, "1.2.3")
+	var stringFormat string
+	err := json.Unmarshal(data, &stringFormat)
+	if err != nil {
+		return err
+	}
+
+	// Parse the major, minor, and patch values out of the string
+	var major, minor, patch int
+	parts := strings.Split(stringFormat, ".")
+	for i := 0; i < 3; i++ {
+		// If the string doesn't have this component, fall back to 0
+		if i >= len(parts) {
+			v[i] = 0
+			continue
+		}
+
+		// Convert the string segment to an integer
+		val, err := strconv.Atoi(parts[i])
+		if err != nil {
+			return fmt.Errorf("failed to parse version '%s': %w", stringFormat, err)
+		}
+
+		v[i] = val
+	}
+
+	// Assign the parsed integers back to the original array pointer
+	*v = Version([3]int{major, minor, patch})
+	return nil
+}
+
 // Header mirrors the "header" object of a Minecraft Bedrock manifest.json.
 type Header struct {
 	Name             string  `json:"name"`
@@ -98,6 +144,7 @@ type Module struct {
 	UUID        string  `json:"uuid,omitempty"`
 	Version     Version `json:"version"`
 	Description string  `json:"description,omitempty"`
+	Entry       string  `json:"entry,omitempty"`
 }
 
 // Dependency mirrors an entry of the "dependencies" array of a manifest.json.
