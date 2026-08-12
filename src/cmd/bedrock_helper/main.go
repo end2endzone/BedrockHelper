@@ -137,6 +137,26 @@ func newBedrockFlagSet(cfg *Config) *flag.FlagSet {
 	return fs
 }
 
+// getOrderedFlags visits all flags in a flagset and make a slice with them.
+// The returned slices is also ordered so that `version` and `help` flags are last.
+func getOrderedFlags(fs *flag.FlagSet) []*flag.Flag {
+	flags := make([]*flag.Flag, 0)
+
+	// Create a slice with all flags, skipping some flags...
+	fs.VisitAll(func(f *flag.Flag) {
+		if f.Name == "version" || f.Name == "help" {
+			return // skip
+		}
+		flags = append(flags, f)
+	})
+
+	// Add our bottom flags at the end of the list.
+	flags = append(flags, fs.Lookup("version"))
+	flags = append(flags, fs.Lookup("help"))
+
+	return flags
+}
+
 // printUsage print a usage string that output each arguments and then examples.
 func printUsage(fs *flag.FlagSet) {
 	output := fs.Output() // os.Stderr
@@ -164,7 +184,9 @@ func printUsage(fs *flag.FlagSet) {
 	// `                             files that look like add-on packs and list them.	`
 
 	fmt.Fprintln(output, "Flags:")
-	fs.VisitAll(func(f *flag.Flag) {
+
+	orderedFlags := getOrderedFlags(fs)
+	for _, f := range orderedFlags {
 		// Split our custom metadata format: "<placeholder>|Description string"
 		parts := strings.SplitN(f.Usage, "|", 2)
 		placeholder := ""
@@ -208,7 +230,7 @@ func printUsage(fs *flag.FlagSet) {
 			padding := strings.Repeat(" ", targetCol)
 			fmt.Fprintf(output, "%s%s\n", padding, lines[i])
 		}
-	})
+	}
 	fmt.Fprintln(output)
 
 	// Print static examples
