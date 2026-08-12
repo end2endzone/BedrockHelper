@@ -100,13 +100,16 @@ func getOrderedFlags(fs *flag.FlagSet) []*flag.Flag {
 
 	// Create a slice with all flags, skipping some flags...
 	fs.VisitAll(func(f *flag.Flag) {
-		if f.Name == "version" || f.Name == "help" {
+		if f.Name == "version" ||
+			f.Name == "help" ||
+			f.Name == "no-header" {
 			return // skip
 		}
 		flags = append(flags, f)
 	})
 
 	// Add our bottom flags at the end of the list.
+	flags = append(flags, fs.Lookup("no-header"))
 	flags = append(flags, fs.Lookup("version"))
 	flags = append(flags, fs.Lookup("help"))
 
