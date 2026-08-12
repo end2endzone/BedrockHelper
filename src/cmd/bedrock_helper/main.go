@@ -26,50 +26,6 @@ type Config struct {
 	Help           bool
 }
 
-/*
-const usageText = `Usage:
-  bedrock_helper --install <path> [--server-location <dir>] [--no-header]
-  bedrock_helper --uninstall <path-or-uuid> [--server-location <dir>] [--no-header]
-  bedrock_helper --find-addons <path> [--no-header]
-  bedrock_helper --list-addons [--server-location <dir>] [--no-header]
-  bedrock_helper --resolve-pack <uuid> [--server-location <dir>] [--no-header]
-  bedrock_helper --install-all [--server-location <dir>] [--no-header]
-  bedrock_helper --uninstall-all [--server-location <dir>] [--no-header]
-  bedrock_helper --version
-  bedrock_helper --help
-
-Flags:
-  --install <path>           Install the .mcaddon/.mcpack/.zip add-on at <path>.
-  --uninstall <path|uuid>    Uninstall the add-on at <path>, or by pack UUID
-                             if the original add-on file is unavailable.
-  --find-addons <path>       Search the directory at <path> recursively for
-  							 files that look like add-on packs and list them.
-  --list-addons              List the add-on packs currently registered for
-                             the target server.
-  --resolve-pack <uuid>      Search the target server for an add-on file that
-                             contains a pack matching <uuid>.
-  --install-all              Scan the target server directory for add-on
-                             files and install every one that is found.
-  --uninstall-all            Scan the target server directory for add-on
-                             files and uninstall every one that is found.
-  --server-location <dir>    Target Minecraft Bedrock server directory.
-                             Optional; defaults to the current directory.
-  --version                  Show the product version.
-  --no-header                Do not show product error with command.
-  --help                     Show this usage message.
-
-Examples:
-  bedrock_helper --install $HOME/foobar.mcaddon --server-location $HOME/myserverinstalldir
-  bedrock_helper --uninstall $HOME/foobar.mcaddon --server-location $HOME/myserverinstalldir
-  bedrock_helper --uninstall 2bda6085-9d71-4d8a-9b9f-74e07b30459c --server-location $HOME/myserverinstalldir
-  bedrock_helper --find-addons /tmp/addons
-  bedrock_helper --list-addons --server-location $HOME/myserverinstalldir
-  bedrock_helper --resolve-pack "2bda6085-9d71-4d8a-9b9f-74e07b30459c" --server-location $HOME/myserverinstalldir
-  bedrock_helper --install-all --server-location $HOME/myserverinstalldir
-  bedrock_helper --uninstall-all --server-location $HOME/myserverinstalldir
-`
-*/
-
 func main() {
 	os.Exit(run(os.Args[1:]))
 }
