@@ -335,22 +335,29 @@ func (w World) UninstallAddon(addonPath string) ([]*Pack, error) {
 // UninstallPackInWorld uninstalls the given pack
 // from the given Minecraft Bedrock world directory at worldDir.
 func (w World) UninstallPack(pack *Pack) (*Pack, error) {
+	// Validate that given pack is owned by this world to prevent deleting a pack installed somewhere else.
+	if !w.IsPackOwnedByWorld(pack) {
+
+		// This pack is not owned by this world.
+		// But maybe the given pack is extracted from a temporary directory.
+		// Search in all installed addons for this pack's UUID
+		installedPack, err := w.PacksByUUID(pack.UUID())
+		if err != nil {
+			return nil, err
+		}
+		if installedPack == nil {
+			return nil, fmt.Errorf("failed to uninstall the pack in directory %v not owned by this world", pack.Path)
+		}
+
+		// Use this installed pack instead of the given pack for uninstallation
+		pack = installedPack
+	}
+
 	// Get the pack's kind
 	kind, err := pack.Kind()
 	if err != nil {
 		return nil, err
 	}
-
-	// Get installation sub directory based on kind
-	kindSubDir, err := kind.InstallDirName()
-	if err != nil {
-		return nil, err
-	}
-
-	// Get the absolute path
-	//packSourceDir := pack.Path
-	packsInstallDir := filepath.Join(w.Path, kindSubDir)
-	packTargetDir := filepath.Join(packsInstallDir, filepath.Base(pack.Path))
 
 	// Build registry file path from worldDir and kind (`world_behavior_packs.json` or `world_resource_packs.json`)
 	registryFilePath, err := getRegistryFilePathFromWorldDirAndKind(w.Path, kind)
@@ -365,15 +372,15 @@ func (w World) UninstallPack(pack *Pack) (*Pack, error) {
 	}
 
 	// Parse the pack before deletion to be able to return its updated properties.
-	uninstalledPack, err := LoadPackFromDirectory(packTargetDir)
+	uninstalledPack, err := LoadPackFromDirectory(pack.Path)
 	if err != nil {
 		return nil, err
 	}
 
 	// Proceed with the directory deletion
-	err = os.RemoveAll(packTargetDir)
+	err = os.RemoveAll(pack.Path)
 	if err != nil {
-		return nil, fmt.Errorf("failed to remove pack directory %q: %w", packTargetDir, err)
+		return nil, fmt.Errorf("failed to remove pack directory %q: %w", pack.Path, err)
 	}
 
 	return uninstalledPack, err
@@ -495,4 +502,42 @@ func readLevelName(propsPath string) (string, error) {
 
 	// not found
 	return "", nil
+}
+
+// IsPackOwnedByWorld defines if a given pack is owned by this world.
+// A pack is owned when it is installed in an official kind directory.
+// Returns true when the given pack is owned by this world. Returns false otherwise.
+func (w World) IsPackOwnedByWorld(pack *Pack) bool {
+	// Get the pack's kind
+	kind, err := pack.Kind()
+	if err != nil {
+		return false
+	}
+
+	// Get installation sub directory based on kind
+	kindSubDir, err := kind.InstallDirName()
+	if err != nil {
+		return false
+	}
+
+	// Get the directory where packs if this kind should be installed
+	packsInstallDir := filepath.Join(w.Path, kindSubDir)
+
+	// Validate that given pack is from this world to prevent deleting a pack that is not owned by this world.
+	if !StringsCompareN(pack.Path, packsInstallDir, len(packsInstallDir)) {
+		return false
+	}
+
+	return true
+}
+
+func StringsCompareN(s1, s2 string, n int) bool {
+	// Prevent out-of-bounds panics if strings are shorter than n
+	if len(s1) < n || len(s2) < n {
+		return false
+	}
+
+	// compare first n bytes
+	equals := s1[:n] == s2[:n]
+	return equals
 }
