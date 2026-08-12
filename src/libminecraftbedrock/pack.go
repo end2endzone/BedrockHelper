@@ -63,7 +63,7 @@ func LoadPackFromDirectory(path string) (*Pack, error) {
 	// Load its manifest
 	manifest, err := LoadManifestFromFile(manifestFullPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read a pack from directory: %q, got error %v", path, err)
+		return nil, fmt.Errorf("failed to read a pack from directory %q: %v", path, err)
 	}
 
 	pack := &Pack{
@@ -83,7 +83,7 @@ func LoadPacksFromSubdirectories(path string) ([]*Pack, error) {
 	// Get all the sub directories
 	entries, err := os.ReadDir(path)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read multiple packs from directory: %q, got error %v", path, err)
+		return nil, fmt.Errorf("failed to read multiple packs from directory %q: %v", path, err)
 	}
 	for _, e := range entries {
 		if e.IsDir() {
@@ -156,7 +156,7 @@ func LoadAllPacksFromDirectoriesOrSubdirectories(root string) ([]*Pack, error) {
 
 	if err != nil {
 		// An error occured while walking the directories
-		return nil, fmt.Errorf("failed to detect packs from directory: %q, got %v", root, err)
+		return nil, fmt.Errorf("failed to detect packs from directory %q: %v", root, err)
 	}
 
 	// Success
