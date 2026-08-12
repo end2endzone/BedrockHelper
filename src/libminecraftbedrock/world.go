@@ -233,7 +233,7 @@ func (w World) InstallPack(pack *Pack) (*Pack, error) {
 	// Get the absolute path
 	packSourceDir := pack.Path
 	packsInstallDir := filepath.Join(w.Path, kindSubDir)
-	packTargetDir := filepath.Join(packsInstallDir, filepath.Base(pack.Path))
+	packTargetDir := filepath.Join(packsInstallDir, pack.NameSanitized())
 
 	// Replace any existing install of the same pack directory name.
 	_, err = os.Stat(packTargetDir)
