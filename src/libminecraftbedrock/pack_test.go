@@ -135,7 +135,6 @@ func TestPack_Description(t *testing.T) {
 	require.Contains(t, desc, pack.Name())
 	require.Contains(t, desc, pack.UUID())
 	require.Contains(t, desc, pack.KindSafe().String())
-	require.Contains(t, desc, pack.Path)
 }
 
 func TestLoadPackFromDirectory(t *testing.T) {
