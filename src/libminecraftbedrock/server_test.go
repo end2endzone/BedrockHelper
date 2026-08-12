@@ -12,7 +12,7 @@ func TestServer_IsValid(t *testing.T) {
 		fixture   string
 		wantValid bool
 	}{
-		{"valid server", "server", true},
+		{"valid server", "server_empty", true},
 		{"valid server with installed pack", "server_with_installed_pack", true},
 		{"missing executable", "not_a_server_missing_exec", false},
 		{"missing server.properties", "not_a_server_missing_server.properties", false},
@@ -33,7 +33,7 @@ func TestServer_IsValid(t *testing.T) {
 func TestServer_ActiveWorld(t *testing.T) {
 	t.Run("valid server resolves its active world", func(t *testing.T) {
 		server := Server{
-			Path: getServerFixturePath(t, "server"),
+			Path: getServerFixturePath(t, "server_empty"),
 		}
 		world, err := server.ActiveWorld()
 		require.NoError(t, err)
@@ -51,7 +51,7 @@ func TestServer_ActiveWorld(t *testing.T) {
 
 func TestGetServer(t *testing.T) {
 	t.Run("valid server directory", func(t *testing.T) {
-		path := getServerFixturePath(t, "server")
+		path := getServerFixturePath(t, "server_empty")
 		server, err := GetServer(path)
 		require.NoError(t, err)
 		require.NotNil(t, server)

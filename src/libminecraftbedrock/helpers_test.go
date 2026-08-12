@@ -81,7 +81,7 @@ func TestCopyAddonFixture(t *testing.T) {
 }
 
 func TestCopyServerFixture(t *testing.T) {
-	tempServerPath := copyServerFixture(t, "server")
+	tempServerPath := copyServerFixture(t, "server_empty")
 	require.NotEmpty(t, tempServerPath, "expected a non-empty temporary server path")
 
 	info, err := os.Stat(tempServerPath)

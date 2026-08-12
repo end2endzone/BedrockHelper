@@ -116,7 +116,7 @@ func TestSanitizeCharactersInPath(t *testing.T) {
 }
 
 func TestMoveDir(t *testing.T) {
-	serverDir := copyServerFixture(t, "server")
+	serverDir := copyServerFixture(t, "server_empty")
 	assertDirExists(t, serverDir)
 
 	//act

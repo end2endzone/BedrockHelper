@@ -23,7 +23,7 @@ func TestFindActiveWorldDir(t *testing.T) {
 		{"Test no server.properties", "not_a_server_missing_server.properties", "", true},
 		{"Test no worlds directory", "not_a_server_missing_worlds", "", true},
 
-		{"Test server with content", "server", "worlds/Bedrock level", false},
+		{"Test server with content", "server_empty", "worlds/Bedrock level", false},
 		{"Test missing level-name falls back to first world dir", "server_no_level_name", "worlds/MyWorld", false},
 		{"Test full server", "server_with_installed_pack", "worlds/Bedrock level", false},
 	}
@@ -53,7 +53,7 @@ func TestFindActiveWorldDir(t *testing.T) {
 
 func TestFindWorldDirectories(t *testing.T) {
 	t.Run("server with a single world", func(t *testing.T) {
-		serverDir := getServerFixturePath(t, "server")
+		serverDir := getServerFixturePath(t, "server_empty")
 		got, err := FindWorldDirectories(serverDir)
 		require.NoError(t, err)
 		require.Len(t, got, 1)
@@ -76,14 +76,14 @@ func TestFindWorldDirectories(t *testing.T) {
 
 func TestWorld_Name(t *testing.T) {
 	t.Run("falls back to directory base name when levelname.txt is missing", func(t *testing.T) {
-		world := getTempActiveWorld(t, "server")
+		world := getTempActiveWorld(t, "server_empty")
 		name, err := world.Name()
 		require.NoError(t, err)
 		require.Equal(t, filepath.Base(world.Path), name)
 	})
 
 	t.Run("uses levelname.txt content when present", func(t *testing.T) {
-		world := getTempActiveWorld(t, "server")
+		world := getTempActiveWorld(t, "server_empty")
 
 		// Create a "levelname.txt" file in world directory
 		err := os.WriteFile(filepath.Join(world.Path, "levelname.txt"), []byte("My Cool World"), 0o644)
@@ -144,7 +144,7 @@ func TestWorld_Packs(t *testing.T) {
 	})
 
 	t.Run("empty world", func(t *testing.T) {
-		world := getTempActiveWorld(t, "server")
+		world := getTempActiveWorld(t, "server_empty")
 		packs, err := world.Packs()
 		require.NoError(t, err)
 		require.Empty(t, packs)
@@ -195,7 +195,7 @@ func TestWorld_RegisterUnregisterIsPackRegistered(t *testing.T) {
 }
 
 func TestWorld_InstallAddon(t *testing.T) {
-	world := getTempActiveWorld(t, "server")
+	world := getTempActiveWorld(t, "server_empty")
 
 	installed, err := world.InstallAddon(getAddonFixturePath(t, "foobar.mcaddon"))
 	require.NoError(t, err)
@@ -217,7 +217,7 @@ func TestWorld_InstallAddon(t *testing.T) {
 }
 
 func TestWorld_InstallPack(t *testing.T) {
-	world := getTempActiveWorld(t, "server")
+	world := getTempActiveWorld(t, "server_empty")
 
 	// Load a pack (unzip and load) and install it directly through World.InstallPack.
 	extractDir := t.TempDir()
@@ -237,7 +237,7 @@ func TestWorld_InstallPack(t *testing.T) {
 }
 
 func TestWorld_UninstallAddon(t *testing.T) {
-	world := getTempActiveWorld(t, "server")
+	world := getTempActiveWorld(t, "server_empty")
 
 	// install addons in world
 	installed, err := world.InstallAddon(getAddonFixturePath(t, "foobar.mcaddon"))

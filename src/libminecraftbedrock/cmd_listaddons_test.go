@@ -20,7 +20,7 @@ func TestListInstalledPacks(t *testing.T) {
 }
 
 func TestListInstalledPacks_EmptyServer(t *testing.T) {
-	tempServerDir := copyServerFixture(t, "server")
+	tempServerDir := copyServerFixture(t, "server_empty")
 	defer os.RemoveAll(tempServerDir)
 
 	packs, err := ListInstalledPacks(tempServerDir)
@@ -29,7 +29,7 @@ func TestListInstalledPacks_EmptyServer(t *testing.T) {
 }
 
 func TestListInstalledPacks_AfterInstallAndUninstall(t *testing.T) {
-	tempServerDir := copyServerFixture(t, "server")
+	tempServerDir := copyServerFixture(t, "server_empty")
 	defer os.RemoveAll(tempServerDir)
 
 	_, err := InstallAddonInServer(getAddonFixturePath(t, "foobar.mcaddon"), tempServerDir)

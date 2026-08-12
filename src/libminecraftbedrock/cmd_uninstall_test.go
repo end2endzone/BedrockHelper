@@ -7,7 +7,7 @@ import (
 )
 
 func TestUninstallAddon(t *testing.T) {
-	tempServerDir := copyServerFixture(t, "server")
+	tempServerDir := copyServerFixture(t, "server_empty")
 
 	// First install
 	installedPacks, err := InstallAddonInServer(getAddonFixturePath(t, "foobar.mcaddon"), tempServerDir)
@@ -33,7 +33,7 @@ func TestUninstallAddon(t *testing.T) {
 }
 
 func TestUninstallAddon_NotInstalled(t *testing.T) {
-	tempServerDir := copyServerFixture(t, "server")
+	tempServerDir := copyServerFixture(t, "server_empty")
 
 	// Never installed, so this should fail to find the pack in the world.
 	_, err := UninstallAddonInServer(getAddonFixturePath(t, "foobar.mcaddon"), tempServerDir)

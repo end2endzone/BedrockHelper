@@ -56,7 +56,7 @@ func TestInstallAddon_SinglePack(t *testing.T) {
 }
 
 func TestInstallAddon_ReinstallReplacesExisting(t *testing.T) {
-	tempServerDir := copyServerFixture(t, "server")
+	tempServerDir := copyServerFixture(t, "server_empty")
 	defer os.RemoveAll(tempServerDir)
 
 	// Install once
@@ -77,7 +77,7 @@ func TestInstallAddon_ReinstallReplacesExisting(t *testing.T) {
 }
 
 func TestInstallAddon_Errors(t *testing.T) {
-	tempServerDir := copyServerFixture(t, "server")
+	tempServerDir := copyServerFixture(t, "server_empty")
 	defer os.RemoveAll(tempServerDir)
 
 	t.Run("invalid addon file", func(t *testing.T) {

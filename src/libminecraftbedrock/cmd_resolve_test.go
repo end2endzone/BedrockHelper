@@ -11,7 +11,7 @@ import (
 
 func TestResolveAddonByUUID(t *testing.T) {
 	// Stage a copy of the add-on file inside the server directory so we can resolve it by UUID.
-	tempServerDir := copyServerFixture(t, "server")
+	tempServerDir := copyServerFixture(t, "server_empty")
 
 	// Create a sub directory for new addons in server
 	newAddonsDir := filepath.Join(tempServerDir, "new_addons")

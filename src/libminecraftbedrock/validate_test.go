@@ -18,7 +18,7 @@ func TestIsValidServerDirectory(t *testing.T) {
 		{"Test missing server.properties", "not_a_server_missing_server.properties", true, false},
 		{"Test missing worlds directory", "not_a_server_missing_worlds", true, false},
 
-		{"Test server with content", "server", false, true},
+		{"Test server with content", "server_empty", false, true},
 		{"Test missing level-name falls back to first world dir", "server_no_level_name", false, true},
 		{"Test full server", "server_with_installed_pack", false, true},
 	}
