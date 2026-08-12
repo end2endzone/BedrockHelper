@@ -12,6 +12,27 @@
             "program": "${fileDirname}"
         },
         {
+            "name": "bedrock_helper (no args)",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/src/cmd/bedrock_helper",
+            "cwd": "${workspaceFolder}",
+            "args": [
+            ]
+        },
+        {
+            "name": "bedrock_helper --version",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/src/cmd/bedrock_helper",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "--version"
+            ]
+        },
+        {
             "name": "bedrock_helper --help",
             "type": "go",
             "request": "launch",
@@ -20,6 +41,63 @@
             "cwd": "${workspaceFolder}",
             "args": [
                 "--help"
+            ]
+        },
+        {
+            "name": "bedrock_helper -help",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/src/cmd/bedrock_helper",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "-help"
+            ]
+        },
+        {
+            "name": "bedrock_helper help",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/src/cmd/bedrock_helper",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "help"
+            ]
+        },
+        {
+            "name": "bedrock_helper -h",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/src/cmd/bedrock_helper",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "-h"
+            ]
+        },
+        {
+            "name": "bedrock_helper (error, missing argument value)",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/src/cmd/bedrock_helper",
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "debug: reset sandbox",
+            "args": [
+                "--install"
+            ]
+        },
+        {
+            "name": "bedrock_helper (error, unknown argument)",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/src/cmd/bedrock_helper",
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "debug: reset sandbox",
+            "args": [
+                "--i-do-not-exists"
             ]
         },
         {
