@@ -1,1 +1,0 @@
-- Create version 0.1.0 tag with binaries so that exec can be downloaded with a curl command.
