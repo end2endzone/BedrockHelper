@@ -3,6 +3,7 @@ package libminecraftbedrock
 import (
 	"fmt"
 	"io/fs"
+	"math/rand/v2"
 	"os"
 	"path/filepath"
 	"strings"
@@ -37,6 +38,14 @@ func (p Pack) Name() string {
 
 func (p Pack) NameSanitized() string {
 	dirName := sanitizeCharactersInPath(p.Manifest.Header.Name)
+
+	// Prevent empty names
+	if dirName == "" {
+		// Generate a random name to prevent conflict with other packs with no name.
+		randomId := fmt.Sprintf("%05d", rand.N(100000))
+		dirName = "pack" + randomId
+	}
+
 	return dirName
 }
 

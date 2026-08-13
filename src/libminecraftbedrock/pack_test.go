@@ -108,7 +108,6 @@ func TestPack_NameSanitized(t *testing.T) {
 	}{
 		{"Solo RP", "Solo RP"},
 		{"Weird/Name:Here", "Weird_Name_Here"},
-		{"", "pack"},
 	}
 
 	for _, tc := range cases {
@@ -125,6 +124,25 @@ func TestPack_NameSanitized(t *testing.T) {
 		// Assert
 		require.Equal(t, tc.want, pack.NameSanitized())
 	}
+
+	t.Run("empty name", func(t *testing.T) {
+		pack := Pack{
+			Path: "/tmp/does-not-matter",
+			Manifest: &AddonManifest{
+				Header: Header{
+					Name: "",
+				},
+			},
+		}
+
+		// Act
+		sanitizedName := pack.NameSanitized()
+
+		// Assert
+		require.True(t, StringsCompareN("pack", sanitizedName, 4))
+		require.Greater(t, len(sanitizedName), 4)
+	})
+
 }
 
 func TestPack_Description(t *testing.T) {

@@ -103,8 +103,8 @@ func assertFileEquals(t *testing.T, file1, file2 string) {
 func TestSanitizeCharactersInPath(t *testing.T) {
 	cases := map[string]string{
 		"Foobar RP":            "Foobar RP",
-		"":                     "pack",
-		"   ":                  "pack",
+		"":                     "",
+		"   ":                  "",
 		"Weird/Name:Here":      "Weird_Name_Here",
 		"  Trim Me  ":          "Trim Me",
 		"Path\\With*Bad?Chars": "Path_With_Bad_Chars",

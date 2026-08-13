@@ -71,14 +71,16 @@ func copyDir(src, dst string) error {
 // sanitizeCharactersInPath converts the given string into a filesystem-safe directory name or file name.
 // Characters that are not supported by filesystems are replaeced by an underscore.
 func sanitizeCharactersInPath(name string) string {
-	if strings.TrimSpace(name) == "" {
-		return "pack"
-	}
-	replacer := strings.NewReplacer(
-		"/", "_", "\\", "_", ":", "_", "*", "_", "?", "_",
-		"\"", "_", "<", "_", ">", "_", "|", "_",
-	)
-	return strings.TrimSpace(replacer.Replace(name))
+	// Remove non-friendly filesystem characters
+	name = ReplaceInvalidFileSystemCharacters(name, "_")
+
+	// Remove emojis, or unreadable characters
+	name = SanitizeString(name, "_")
+
+	// and trim
+	name = strings.TrimSpace(name)
+
+	return name
 }
 
 // copyFile copies a a file from `src` to `dst`.
