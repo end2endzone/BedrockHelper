@@ -112,7 +112,7 @@
                 "--install",
                 "${workspaceFolder}/.debug-sandbox/testdata/addons/foobar.mcaddon",
                 "--server-location",
-                "${workspaceFolder}/.debug-sandbox/testdata/servers/server"
+                "${workspaceFolder}/.debug-sandbox/testdata/servers/server_empty"
             ]
         },
         {
