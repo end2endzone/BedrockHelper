@@ -2,6 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Go version](https://img.shields.io/github/go-mod/go-version/end2endzone/BedrockHelper?filename=src%2Fgo.mod)](src/go.mod)
+[![Github Releases](https://img.shields.io/github/release/end2endzone/BedrockHelper.svg)](https://github.com/end2endzone/BedrockHelper/releases)
 
 `bedrock_helper` is a command line tool for installing, uninstalling and inspecting Minecraft Bedrock Edition add-on packs (`.mcaddon` / `.mcpack`) on a Minecraft Bedrock Dedicated Server (BDS).
 
@@ -62,13 +63,48 @@ This is tedious, error-prone, and hard to automate. `bedrock_helper` does all of
 
 ## Installation
 
+You can install *BedrockHelper* by downloading the right binary from its [latest release page](https://github.com/end2endzone/BedrockHelper/releases/latest/).
+There are binaries for *Linux*, *macOS* and *Windows*. Binaries for all major operating systems are also available for ***AMD64*** and ***ARM64*** cpu architectures.
 
-### Prerequisites
+You can also install with a command such as the following:
 
-- [Go](https://go.dev/dl/). For exact version see [`src/go.mod`](src/go.mod) or the badge at the top of this document).
+#### Linux / macOS:
+
+```bash
+CPUARCH=$(case "$(uname -m)" in x86_64) echo "amd64";; aarch64) echo "arm64";; *) uname -m;; esac)
+OSTYPE=$(uname -s | tr '[:upper:]' '[:lower:]')
+URL="https://github.com/end2endzone/BedrockHelper/releases/latest/download/bedrock_helper-$OSTYPE-$CPUARCH"
+curl -sSO "$URL"
+chmod +x "bedrock_helper-$OSTYPE-$CPUARCH"
+```
+
+On system where *[Go](https://go.dev/)* is installed, you can also do :
+```bash
+CPUARCH=$(go env GOARCH)
+OSTYPE=$(go env GOHOSTOS)
+URL="https://github.com/end2endzone/BedrockHelper/releases/latest/download/bedrock_helper-$OSTYPE-$CPUARCH"
+curl -sSO "$URL"
+chmod +x "bedrock_helper-$OSTYPE-$CPUARCH"
+```
+
+
+#### Windows PowerShell:
+
+```powershell
+$url = "https://github.com/end2endzone/BedrockHelper/releases/latest/download/bedrock_helper-windows-" + ($env:PROCESSOR_ARCHITECTURE).ToLower() + ".exe"
+Invoke-WebRequest -Uri $url -OutFile "$env:USERPROFILE\Downloads\$(Split-Path -Leaf $url)"
+```
 
 
 ### Build from source
+
+Prerequisites:
+
+- [Go](https://go.dev/dl/). Minimum version required is [![Go version](https://img.shields.io/github/go-mod/go-version/end2endzone/BedrockHelper?filename=src%2Fgo.mod)](src/go.mod).
+- *Git*
+
+
+Commands:
 
 ```console
 git clone https://github.com/end2endzone/BedrockHelper.git
@@ -213,8 +249,10 @@ bedrock_server/
 ```
 
 
+## Development
 
-## Test using the CI scripts
+
+### Test using the CI scripts
 
 The test scripts under [`ci/`](ci) are what the GitHub Actions workflows use for testing, and can also be run locally.
 
