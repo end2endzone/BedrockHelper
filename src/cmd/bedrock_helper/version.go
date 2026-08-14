@@ -5,7 +5,7 @@ import "fmt"
 // These variables are populated at build time using -ldflags
 var (
 	Version    = "0.0.0"
-	CommitHash = "1234567"
+	CommitHash = "0000000"
 	BuildDate  = "1900-01-01"
 )
 
