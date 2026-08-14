@@ -1,32 +1,43 @@
 # Define variables
-BINARY_NAME=bedrock_helper
 CMD_DIR=./cmd/bedrock_helper
+
+# Define standard installation paths
+PREFIX ?= /usr/local
+BINDIR  = $(PREFIX)/bin
+
+# Define target binary file name
+CPUARCH := $(shell go env GOARCH)
+OSTYPE  := $(shell go env GOHOSTOS)
+TARGET  := bedrock_helper-$(OSTYPE)-$(CPUARCH)
 
 .PHONY: all build run test clean tidy
 
 all: build
 
-## build: Compile the binary
+# build: Compile the binary
 build:
-	@echo "Building binary..."
-	go build -o bin/$(BINARY_NAME) src/$(CMD_DIR)
+	@./ci/linux/build.sh
 
-## run: Build and execute the application
+# run: Build and execute the application
 run: build
-	@echo "Running application..."
-	./bin/$(BINARY_NAME)
+	@echo
+	@./bin/$(TARGET) || true
 
-## test: Run unit tests across all packages
+# test: Run unit tests across all packages
 test:
-	@echo "Running tests..."
-	go test -v ./src/...
+	@./ci/linux/test.sh
 
-## clean: Remove compiled binaries
+# clean: Remove compiled binaries
 clean:
-	@echo "Cleaning build cache..."
-	rm -rf bin/
+	@./ci/linux/clean.sh
 
-## tidy: Format code and clean up dependencies
+# tidy: Format code and clean up dependencies
 tidy:
-	go fmt ./src/...
-	go mod tidy
+	cd src && go fmt ./...
+	cd src && go mod tidy
+
+# install: Install the binary to the user's bin directory
+install: build
+	@echo
+	mkdir -p $(DESTDIR)$(BINDIR)
+	install -m 0755 $(TARGET) $(DESTDIR)$(BINDIR)/$(TARGET)
