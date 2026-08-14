@@ -14,19 +14,6 @@ DATE=$(date +%F)
 if [[ -n "${GOOS}" ]]; then
     echo "GOOS is set to: $GOOS"
 else
-    # Detect OS type
-    #OS_TYPE=$(uname -s | tr '[:upper:]' '[:lower:]')
-    ## Truncate OS_TYPE when running on specific OS
-    #case "$OS_TYPE" in
-    #linux)      GOOS="linux" ;;
-    #darwin)     GOOS="darwin" ;;
-    #*mingw64*|
-    #*mingw32*|
-    #*msys*|
-    #*cygwin*)   GOOS="windows" ;;
-    #*)          GOOS="unknown" ;;
-    #esac
-
     GOOS=$(go env GOHOSTOS)
     echo "GOOS is not set and is forced to: $GOOS"
 fi
@@ -39,15 +26,22 @@ else
     echo "GOARCH is not set and is forced to: $GOARCH"
 fi
 
+# Define the target binary file path based on the environment
+TARGET="$PROJECTROOT/bin/bedrock_helper"
+if [[ "$CI" == "true" ]]; then
+    TARGET="$PROJECTROOT/bin/bedrock_helper-$GOOS-$GOARCH"
+    echo "Building on CI/CD server. Changing the target file name to '$TARGET'"
+fi
+
 # Ensures your binary does not depend on host operating system C libraries, making the binary completely portable.
 CGO_ENABLED=0
 
 # Point this to the exact package path where your main function lives
 PKG="main"
 
-echo "Building bedrock_helper-$GOOS-$GOARCH version $VERSION..."
+echo "Building $(basename "$TARGET") version $VERSION..."
 
 # Run build from the root, pointing to the main package directory
-go build -ldflags "-X '${PKG}.Version=${VERSION}' -X '${PKG}.CommitHash=${COMMIT}' -X '${PKG}.BuildDate=${DATE}'" -o $PROJECTROOT/bin/bedrock_helper-$GOOS-$GOARCH ./cmd/bedrock_helper
+go build -ldflags "-X '${PKG}.Version=${VERSION}' -X '${PKG}.CommitHash=${COMMIT}' -X '${PKG}.BuildDate=${DATE}'" -o $TARGET ./cmd/bedrock_helper
 
 echo "Build complete!"

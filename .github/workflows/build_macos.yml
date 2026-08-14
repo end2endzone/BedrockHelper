@@ -127,6 +127,6 @@ jobs:
       if: success() || steps.unit_tests.conclusion == 'failure'
       uses: actions/upload-artifact@v7
       with:
-        name: Installation packages.
+        name: Installation packages (macos).
         path: bin/bedrock_helper-*-* # bedrock_helper-$OS_TYPE-$CPU_ARCHITECTURE
         if-no-files-found: error

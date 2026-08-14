@@ -74,8 +74,8 @@ You can also install with a command such as the following:
 CPUARCH=$(case "$(uname -m)" in x86_64) echo "amd64";; aarch64) echo "arm64";; *) uname -m;; esac)
 OSTYPE=$(uname -s | tr '[:upper:]' '[:lower:]')
 URL="https://github.com/end2endzone/BedrockHelper/releases/latest/download/bedrock_helper-$OSTYPE-$CPUARCH"
-curl -sSO "$URL"
-chmod +x "bedrock_helper-$OSTYPE-$CPUARCH"
+curl -sS "$URL" -o "bedrock_helper"
+chmod +x "bedrock_helper"
 ```
 
 On system where *[Go](https://go.dev/)* is installed, you can also do :
@@ -83,8 +83,8 @@ On system where *[Go](https://go.dev/)* is installed, you can also do :
 CPUARCH=$(go env GOARCH)
 OSTYPE=$(go env GOHOSTOS)
 URL="https://github.com/end2endzone/BedrockHelper/releases/latest/download/bedrock_helper-$OSTYPE-$CPUARCH"
-curl -sSO "$URL"
-chmod +x "bedrock_helper-$OSTYPE-$CPUARCH"
+curl -sS "$URL" -o "bedrock_helper"
+chmod +x "bedrock_helper"
 ```
 
 
@@ -92,7 +92,7 @@ chmod +x "bedrock_helper-$OSTYPE-$CPUARCH"
 
 ```powershell
 $url = "https://github.com/end2endzone/BedrockHelper/releases/latest/download/bedrock_helper-windows-" + ($env:PROCESSOR_ARCHITECTURE).ToLower() + ".exe"
-Invoke-WebRequest -Uri $url -OutFile "$env:USERPROFILE\Downloads\$(Split-Path -Leaf $url)"
+Invoke-WebRequest -Uri $url -OutFile "bedrock_helper.exe"
 ```
 
 
@@ -120,7 +120,7 @@ This produces a single `bedrock_helper` (or `bedrock_helper.exe` on Windows) exe
 
 The scripts under [`ci/`](ci) are what the GitHub Actions workflows use, and can also be run locally. They embed the version, commit hash and build date into the binary via `-ldflags`, and place the result in `bin/` at the repository root.
 
-They produce a single executable named `bedrock_helper-{os}-{cpuarch}` with no runtime dependencies. For example `bedrock_helper-darwin-amd64`, `bedrock_helper-windows-amd64.exe`, etc. Copy it anywhere on your `PATH`.
+When building locally, the scripts produce a single executable named `bedrock_helper` or `bedrock_helper.exe` with no runtime dependencies. Copy it anywhere on your `PATH`.
 
 
 Linux / macOS:
@@ -141,7 +141,7 @@ Windows (PowerShell or Command Prompt):
 
 `GOOS` and `GOARCH` can be set beforehand to cross-compile (e.g. `GOOS=linux GOARCH=arm64 ./ci/linux/build.sh` to build a Linux ARM64 binary from any host).
 
-
+When building on a CI/CD server, the output file name is changed to `bedrock_helper-{os}-{cpuarch}`. For example `bedrock_helper-darwin-amd64` or `bedrock_helper-windows-amd64.exe`, etc. `CI=true` can be set beforehand to simulate building on a CI/CD server.
 
 ## Usage
 

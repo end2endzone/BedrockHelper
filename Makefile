@@ -8,7 +8,7 @@ BINDIR  = $(PREFIX)/bin
 # Define target binary file name
 CPUARCH := $(shell go env GOARCH)
 OSTYPE  := $(shell go env GOHOSTOS)
-TARGET  := bedrock_helper-$(OSTYPE)-$(CPUARCH)
+TARGET  := bedrock_helper
 
 .PHONY: all build run test clean tidy
 
