@@ -1,7 +1,7 @@
 # BedrockHelper
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Go version](https://img.shields.io/github/go-mod/go-version/end2endzone/BedrockHelper?filename=src%2Fgo.mod)](src/go.mod)
+[![Go version](https://img.shields.io/github/go-mod/go-version/end2endzone/BedrockHelper?filename=go.mod)](go.mod)
 [![Github Releases](https://img.shields.io/github/release/end2endzone/BedrockHelper.svg)](https://github.com/end2endzone/BedrockHelper/releases)
 
 `bedrock_helper` is a command line tool for installing, uninstalling and inspecting Minecraft Bedrock Edition add-on packs (`.mcaddon` / `.mcpack`) on a Minecraft Bedrock Dedicated Server (BDS).
@@ -100,7 +100,7 @@ Invoke-WebRequest -Uri $url -OutFile "bedrock_helper.exe"
 
 Prerequisites:
 
-- [Go](https://go.dev/dl/). Minimum version required is [![Go version](https://img.shields.io/github/go-mod/go-version/end2endzone/BedrockHelper?filename=src%2Fgo.mod)](src/go.mod).
+- [Go](https://go.dev/dl/). Minimum version required is [![Go version](https://img.shields.io/github/go-mod/go-version/end2endzone/BedrockHelper?filename=go.mod)](go.mod).
 - *Git*
 
 
@@ -108,8 +108,8 @@ Commands:
 
 ```console
 git clone https://github.com/end2endzone/BedrockHelper.git
-cd BedrockHelper/src
-go build -o bedrock_helper ./cmd/bedrock_helper
+cd BedrockHelper
+go build -o bin/bedrock_helper ./cmd/bedrock_helper
 ```
 
 This produces a single `bedrock_helper` (or `bedrock_helper.exe` on Windows) executable with no runtime dependencies. Copy it anywhere on your `PATH`.
@@ -274,7 +274,7 @@ Windows (PowerShell or Command Prompt):
 .\ci\windows\test.bat
 ```
 
-The tests use [testify](https://github.com/stretchr/testify)'s `assert`/`require` packages and a set of fixture add-ons and fake server directories under `src/testdata/`, so they don't touch a real Minecraft installation.
+The tests use [testify](https://github.com/stretchr/testify)'s `assert`/`require` packages and a set of fixture add-ons and fake server directories under `testdata/`, so they don't touch a real Minecraft installation.
 
 
 ### Debugging in VS Code
@@ -289,7 +289,7 @@ The tests use [testify](https://github.com/stretchr/testify)'s `assert`/`require
 * `--install-all`
 * `--uninstall-all`
 
-Configurations that install or uninstall packs run against a disposable copy of `src/testdata` under `.debug-sandbox/` (refreshed automatically before every run by the `debug: reset sandbox` task), so debugging never modifies the checked-in test fixtures.
+Configurations that install or uninstall packs run against a disposable copy of `testdata` under `.debug-sandbox/` (refreshed automatically before every run by the `debug: reset sandbox` task), so debugging never modifies the checked-in test fixtures.
 
 
 ## Platform support

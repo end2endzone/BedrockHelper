@@ -4,7 +4,7 @@ set -e
 # Get the projet's root directory
 PROJECTROOT=$(cd "$(dirname "$0")/../.." && pwd)
 
-cd $PROJECTROOT/src
+cd $PROJECTROOT
 
 VERSION=$(cat $PROJECTROOT/VERSION)
 COMMIT=$(git rev-parse --short HEAD)

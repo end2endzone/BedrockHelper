@@ -97,7 +97,7 @@
         },
         {
             "label": "debug: reset sandbox",
-            "detail": "Refreshes .debug-sandbox/ from src/testdata/ so the launch.json debug configurations always start from a clean, known state.",
+            "detail": "Refreshes .debug-sandbox/ from testdata/ so the launch.json debug configurations always start from a clean, known state.",
             "type": "shell",
             "options": {
                 "cwd": "${workspaceFolder}"

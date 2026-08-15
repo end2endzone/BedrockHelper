@@ -33,8 +33,8 @@ clean:
 
 # tidy: Format code and clean up dependencies
 tidy:
-	cd src && go fmt ./...
-	cd src && go mod tidy
+	go fmt ./...
+	go mod tidy
 
 # install: Install the binary to the user's bin directory
 install: build

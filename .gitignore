@@ -24,7 +24,7 @@ go.work.sum
 # .idea/
 # .vscode/
 
-# Disposable copy of src/testdata used by the .vscode/launch.json debug configurations.
+# Disposable copy of testdata used by the .vscode/launch.json debug configurations.
 .debug-sandbox/
 
 # Test report & badge files

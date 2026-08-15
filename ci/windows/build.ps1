@@ -4,7 +4,7 @@ $ErrorActionPreference = "Stop"
 $ProjectRoot = "$PSScriptRoot/../.."
 
 Push-Location
-Set-Location $ProjectRoot/src
+Set-Location $ProjectRoot
 
 $Version = (Get-Content $ProjectRoot\VERSION).Trim()
 $Commit = (git rev-parse --short HEAD).Trim()
