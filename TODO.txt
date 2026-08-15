@@ -1,1 +1,0 @@
-- Support command such as `go install github.com/your-username/my-repo/cmd/my-app@latest`
