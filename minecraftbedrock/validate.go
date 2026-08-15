@@ -1,4 +1,4 @@
-package libminecraftbedrock
+package minecraftbedrock
 
 import (
 	"archive/zip"

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"text/tabwriter"
 
-	lib "bedrock_helper/libminecraftbedrock"
+	lib "bedrock_helper/minecraftbedrock"
 )
 
 // Config holds all the command-line argument values
