@@ -38,9 +38,9 @@ func isNumberInRange(str string, min int, max int) bool {
 	return true
 }
 
-// isTimeStamp detect if the given string is a timestamp. A timestamp is a string in format `YYYYMMDDhhmmss`.
+// isValidTimestamp detect if the given string is a timestamp. A timestamp is a string in format `YYYYMMDDhhmmss`.
 // Returns true if the given input is a timestamp. Returns false otherwise.
-func isTimeStamp(input string) bool {
+func isValidTimestamp(input string) bool {
 	if len(input) != 14 {
 		return false
 	}
@@ -68,9 +68,7 @@ func isTimeStamp(input string) bool {
 	return true
 }
 
-// isGitHash detect if the given string is a git hash.
-// Returns true if the given input is a git hash. Returns false otherwise.
-func isGitHash(input string) bool {
+func isHexString(input string) bool {
 	for _, c := range input {
 		valid := (c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')
 		if !valid {
@@ -80,31 +78,75 @@ func isGitHash(input string) bool {
 	return true
 }
 
-// parseDateTimeAndGitHash parse a datetime and a git hash from the input string.
+// isSemVerGitHash detect if the given string is a git hash from a Semantic Version string.
+// Returns true if the given input is a git hash. Returns false otherwise.
+func isSemVerGitHash(input string) bool {
+	// hash are always 12 bytes long
+	if len(input) != 12 {
+		return false
+	}
+
+	// hash are always in hex format
+	hex := isHexString(input)
+	return hex
+}
+
+// findDateTimeInSemVer finds a datetime timestamp in the given semantic version string.
+// For example, it returns `20260815155314` from the input string `v0.1.1-0.20260815155314-4ad116a8bdf3`.
+// Returns a valid datetime value when found. Returns an empty string otherwise.
+func findDateTimeInSemVer(input string) string {
+	// Strip out `-`, `.` or `+` from the input string
+	replacement := "/"
+	input = strings.ReplaceAll(input, ".", replacement)
+	input = strings.ReplaceAll(input, "-", replacement)
+	input = strings.ReplaceAll(input, "+", replacement)
+
+	// Search in fields
+	fields := strings.Split(input, replacement)
+	for _, value := range fields {
+		if isValidTimestamp(value) {
+			return value
+		}
+	}
+
+	return ""
+}
+
+// findGitHashInSemVer finds a git hash in the given semantic version string.
+// For example, it returns `4ad116a8bdf3` from the input string `v0.1.1-0.20260815155314-4ad116a8bdf3`.
+// Returns a valid git hash value when found. Returns an empty string otherwise.
+func findGitHashInSemVer(input string) string {
+	// Strip out `-`, `.` or `+` from the input string
+	replacement := "/"
+	input = strings.ReplaceAll(input, ".", replacement)
+	input = strings.ReplaceAll(input, "-", replacement)
+	input = strings.ReplaceAll(input, "+", replacement)
+
+	// Search in fields
+	fields := strings.Split(input, replacement)
+	for _, value := range fields {
+		if isSemVerGitHash(value) {
+			return value
+		}
+	}
+
+	return ""
+}
+
+// parseDateTimeAndGitHash parse a datetime and a git hash from the given semantic version string.
 // Returns  ok when the input string is a semantic prerelease string containing a datetime and a git hash.
 // Returns !ok otherwise
-func parseDateTimeAndGitHash(input string) (datetime string, gitcommit string, ok bool) {
-	// example: -20260815131415-de3798c09c08
+func parseDateTimeAndGitHash(input string) (datetime string, githash string, ok bool) {
+	// example: v0.1.1-0.20260815155314-4ad116a8bdf3
 
-	// Remove leading `-` character
-	input = strings.TrimPrefix(input, "-")
+	datetime = findDateTimeInSemVer(input)
+	githash = findGitHashInSemVer(input)
 
-	fields := strings.Split(input, "-")
-	if len(fields) != 2 {
-		return "", "", false
+	if datetime != "" && githash != "" {
+		return datetime, githash, true
 	}
 
-	// Check first field
-	if !isTimeStamp(fields[0]) {
-		return "", "", false
-	}
-
-	// Check second field
-	if !isGitHash(fields[1]) {
-		return "", "", false
-	}
-
-	return fields[0], fields[1], true
+	return "", "", false
 }
 
 // GetSemanticVersionFromDebugBuildInfo parses a go pseudo-version into a ProductVersion.
@@ -124,7 +166,12 @@ func parsePseudoVersion(input string) ProductVersion {
 	prerelease := semver.Prerelease(input)
 	datetime, githash, ok := parseDateTimeAndGitHash(prerelease)
 	if ok {
-		p.Version = strings.ReplaceAll(canonical, prerelease, "") // remove pre-release string from canonical version
+		// remove githash and datetime in p.Version
+		p.Version = strings.ReplaceAll(p.Version, "-"+datetime, "")
+		p.Version = strings.ReplaceAll(p.Version, "."+datetime, "")
+		p.Version = strings.ReplaceAll(p.Version, "-"+githash, "")
+		p.Version = strings.ReplaceAll(p.Version, "."+githash, "")
+
 		p.BuildDate = datetime[0:4] + "-" + datetime[4:6] + "-" + datetime[6:8]
 		p.CommitHash = githash
 	}
