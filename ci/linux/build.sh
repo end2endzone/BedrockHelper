@@ -6,10 +6,6 @@ PROJECTROOT=$(cd "$(dirname "$0")/../.." && pwd)
 
 cd $PROJECTROOT
 
-VERSION=$(cat $PROJECTROOT/VERSION)
-COMMIT=$(git rev-parse --short HEAD)
-DATE=$(date +%F)
-
 # GOOS
 if [[ -n "${GOOS}" ]]; then
     echo "GOOS is set to: $GOOS"
@@ -42,6 +38,6 @@ PKG="main"
 echo "Building $(basename "$TARGET") version $VERSION..."
 
 # Run build from the root, pointing to the main package directory
-go build -ldflags "-X '${PKG}.Version=${VERSION}' -X '${PKG}.CommitHash=${COMMIT}' -X '${PKG}.BuildDate=${DATE}'" -o $TARGET ./cmd/bedrock_helper
+go build -o $TARGET ./cmd/bedrock_helper
 
 echo "Build complete!"

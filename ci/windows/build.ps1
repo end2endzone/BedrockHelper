@@ -6,10 +6,6 @@ $ProjectRoot = "$PSScriptRoot/../.."
 Push-Location
 Set-Location $ProjectRoot
 
-$Version = (Get-Content $ProjectRoot\VERSION).Trim()
-$Commit = (git rev-parse --short HEAD).Trim()
-$Date = (Get-Date).ToString("yyyy-MM-dd")
-
 # GOOS
 if (-not [string]::IsNullOrEmpty($env:GOOS)) {
     Write-Output "GOOS is set to: $env:GOOS"
@@ -42,7 +38,7 @@ $Pkg = "main"
 Write-Host "Building $(Split-Path -Leaf $Target) version $Version..."
 
 # Run build from the root, pointing to the main package directory
-go build -ldflags "-X '$Pkg.Version=$Version' -X '$Pkg.CommitHash=$Commit' -X '$Pkg.BuildDate=$Date'" -o $Target ./cmd/bedrock_helper
+go build -o $Target ./cmd/bedrock_helper
 
 Write-Host "Build complete!"
 
