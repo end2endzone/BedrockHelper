@@ -46,6 +46,28 @@ func reportArgumentParsingError(format string, args ...any) {
 	fmt.Fprintf(os.Stderr, fullFormat, args...)
 }
 
+// hasArgument checks if a specific argument exists in the raw command-line arguments.
+// The function also automatically checks with the `-` and `--` prefixes.
+// For example,  hasArgument("version") returns true when `--version` is one of the arguments.
+// Returns true when the given value is found. Returns false otherwise.
+func hasArgument(value string) bool {
+	// Loop through arguments, skipping the first one (program path)
+	for _, arg := range os.Args[1:] {
+		// Specific value
+		if arg == value {
+			// Found exact match
+			return true
+		}
+
+		// Try the `-` and `--` prefixes
+		if arg == "--"+value || arg == "-"+value {
+			// Found exact match
+			return true
+		}
+	}
+	return false
+}
+
 // newBedrockFlagSet initializes the FlagSet and binds fields directly to the Config struct
 func newBedrockFlagSet(cfg *Config) *flag.FlagSet {
 	fs := flag.NewFlagSet("bedrock_helper", flag.ContinueOnError)
@@ -234,8 +256,8 @@ func run(args []string) int {
 	// Manually parse for `--no-header` and `--version` arguments before calling fs.Parse().
 	// In case of parsing errors, the error will be printed before the flag library will call our custom fs.Usage().
 	// So we must print the application's header or version before doing the actual parsing.
-	cfg.NoHeader = *flag.Bool("no-header", false, "") // hasArgument("--no-header")
-	cfg.Version = *flag.Bool("version", false, "")    // hasArgument("--version")
+	cfg.NoHeader = hasArgument("no-header")
+	cfg.Version = hasArgument("version")
 
 	// Should we only print the version ?
 	if cfg.Version {
