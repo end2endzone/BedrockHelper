@@ -1,7 +1,7 @@
 # BedrockHelper
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Go version](https://img.shields.io/github/go-mod/go-version/end2endzone/BedrockHelper?filename=src%2Fgo.mod)](src/go.mod)
+[![Go version](https://img.shields.io/github/go-mod/go-version/end2endzone/BedrockHelper?filename=go.mod)](go.mod)
 [![Github Releases](https://img.shields.io/github/release/end2endzone/BedrockHelper.svg)](https://github.com/end2endzone/BedrockHelper/releases)
 
 `bedrock_helper` is a command line tool for installing, uninstalling and inspecting Minecraft Bedrock Edition add-on packs (`.mcaddon` / `.mcpack`) on a Minecraft Bedrock Dedicated Server (BDS).
@@ -63,10 +63,13 @@ This is tedious, error-prone, and hard to automate. `bedrock_helper` does all of
 
 ## Installation
 
+### Download pre-build binaries from github.com
+
 You can install *BedrockHelper* by downloading the right binary from its [latest release page](https://github.com/end2endzone/BedrockHelper/releases/latest/).
 There are binaries for *Linux*, *macOS* and *Windows*. Binaries for all major operating systems are also available for ***AMD64*** and ***ARM64*** cpu architectures.
 
 You can also install with a command such as the following:
+
 
 #### Linux / macOS:
 
@@ -96,20 +99,61 @@ Invoke-WebRequest -Uri $url -OutFile "bedrock_helper.exe"
 ```
 
 
-### Build from source
+### Build via *go install* command
+
+BedrockHelper can be installed cia `go install` command:
+
+```
+go install github.com/end2endzone/BedrockHelper/cmd/bedrock_helper@latest
+```
+
+This will install bedrock_helper executable the bin directory of your GOPATH directory. The get the path of your Go bin directory, you can run `go env GOPATH`. The `bin` directory will be located under the given directory.
+
+For example:
+* `$HOME/go/bin/bedrock_helper` (linux)
+* `%USERPROFILE%\go\bin\bedrock_helper.exe` (Windows)
+
+If `GOBIN` environment variable is set: the binary goes into `$GOBIN` (or `$env:GOBIN`, `%GOBIN%`).
+
+
+#### Update your *PATH*
+
+After installation, if typing `bedrock_helper` (or `bedrock_helper.exe`) returns `command not found`, your system's `PATH` environment variable does not include the Go binary directory yet.
+
+On Linux / macOS:
+
+Add `$(go env GOPATH)/bin` to your `~/.bashrc`, `~/.zshrc`, or `~/.bash_profile`:
+
+```bash
+export PATH=$PATH:$(go env GOPATH)/bin
+```
+
+Then reload your shell: `source ~/.bashrc` (or open a new terminal window).
+
+On Windows (PowerShell):
+
+Run this command to temporarily add Go binary directory to your current session:
+
+```powershell
+$env:Path += ";$env:USERPROFILE\go\bin"
+```
+
+or add `%USERPROFILE%\go\bin` to your `Path` environment variable.
+
+
+### Build manually from source
 
 Prerequisites:
 
-- [Go](https://go.dev/dl/). Minimum version required is [![Go version](https://img.shields.io/github/go-mod/go-version/end2endzone/BedrockHelper?filename=src%2Fgo.mod)](src/go.mod).
+- [Go](https://go.dev/dl/). Minimum version required is [![Go version](https://img.shields.io/github/go-mod/go-version/end2endzone/BedrockHelper?filename=go.mod)](go.mod).
 - *Git*
 
-
-Commands:
+You can also manually clone the repo and build the application:
 
 ```console
 git clone https://github.com/end2endzone/BedrockHelper.git
-cd BedrockHelper/src
-go build -o bedrock_helper ./cmd/bedrock_helper
+cd BedrockHelper
+go build -o bin/bedrock_helper ./cmd/bedrock_helper
 ```
 
 This produces a single `bedrock_helper` (or `bedrock_helper.exe` on Windows) executable with no runtime dependencies. Copy it anywhere on your `PATH`.
@@ -143,6 +187,8 @@ Windows (PowerShell or Command Prompt):
 
 When building on a CI/CD server, the output file name is changed to `bedrock_helper-{os}-{cpuarch}`. For example `bedrock_helper-darwin-amd64` or `bedrock_helper-windows-amd64.exe`, etc. `CI=true` can be set beforehand to simulate building on a CI/CD server.
 
+
+
 ## Usage
 
 ```
@@ -172,6 +218,7 @@ Only one command may be specified per invocation.
 | `--no-header`               | Do not show the product header when running a command.                                            |
 | `--version`                 | Show the product version.                                                                         |
 | `--help`                    | Show the usage message.                                                                           |
+
 
 ### Example - installing an add-on
 
@@ -274,7 +321,7 @@ Windows (PowerShell or Command Prompt):
 .\ci\windows\test.bat
 ```
 
-The tests use [testify](https://github.com/stretchr/testify)'s `assert`/`require` packages and a set of fixture add-ons and fake server directories under `src/testdata/`, so they don't touch a real Minecraft installation.
+The tests use [testify](https://github.com/stretchr/testify)'s `assert`/`require` packages and a set of fixture add-ons and fake server directories under `testdata/`, so they don't touch a real Minecraft installation.
 
 
 ### Debugging in VS Code
@@ -289,7 +336,7 @@ The tests use [testify](https://github.com/stretchr/testify)'s `assert`/`require
 * `--install-all`
 * `--uninstall-all`
 
-Configurations that install or uninstall packs run against a disposable copy of `src/testdata` under `.debug-sandbox/` (refreshed automatically before every run by the `debug: reset sandbox` task), so debugging never modifies the checked-in test fixtures.
+Configurations that install or uninstall packs run against a disposable copy of `testdata` under `.debug-sandbox/` (refreshed automatically before every run by the `debug: reset sandbox` task), so debugging never modifies the checked-in test fixtures.
 
 
 ## Platform support
