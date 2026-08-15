@@ -35,7 +35,7 @@ func printHeader() {
 }
 
 func printVersion() {
-	fmt.Fprintf(os.Stdout, "Version %s.\n", GetProductVersion())
+	fmt.Fprintf(os.Stdout, "Version %s.\n", GetProductVersionString())
 }
 
 func reportArgumentParsingError(format string, args ...any) {
