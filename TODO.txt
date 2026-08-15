@@ -1,2 +1,1 @@
-- Rename module from module bedrock_helper and instead it should match the repo's import path: `go mod init github.com/your-username/reponame`.
 - Support command such as `go install github.com/your-username/my-repo/cmd/my-app@latest`

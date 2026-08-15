@@ -1,4 +1,4 @@
-module bedrock_helper
+module github.com/end2endzone/BedrockHelper
 
 go 1.26
 
