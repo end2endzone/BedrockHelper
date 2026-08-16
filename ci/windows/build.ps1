@@ -1,7 +1,7 @@
 $ErrorActionPreference = "Stop"
 
 # Get the projet's root directory
-$ProjectRoot = "$PSScriptRoot/../.."
+$ProjectRoot = Convert-Path("$PSScriptRoot/../..")
 
 Push-Location
 Set-Location $ProjectRoot
@@ -23,9 +23,9 @@ if (-not [string]::IsNullOrEmpty($env:GOARCH)) {
 }
 
 # Define the target binary file path based on the environment
-$Target="$ProjectRoot/bin/bedrock_helper.exe"
+$Target="$ProjectRoot\bin\bedrock_helper.exe"
 if ($env:CI -eq "true") {
-    $Target="$ProjectRoot/bin/bedrock_helper-$env:GOOS-$env:GOARCH.exe"
+    $Target="$ProjectRoot\bin\bedrock_helper-$env:GOOS-$env:GOARCH.exe"
     echo "Building on CI/CD server. Changing the target file name to '$Target'"
 }
 
@@ -41,5 +41,9 @@ Write-Host "Building $(Split-Path -Leaf $Target) version $Version..."
 go build -o $Target ./cmd/bedrock_helper
 
 Write-Host "Build complete!"
+Write-Host
+
+# Show compiled version
+& $Target --version
 
 Pop-Location

@@ -125,6 +125,8 @@ jobs:
       run: |
         echo PRODUCT_VERSION=$(cat VERSION)
         echo PRODUCT_VERSION=$(cat VERSION)>> $GITHUB_ENV
+        echo
+        ./ci/linux/print-version.sh
     
     - name: Archive installation packages
       if: success() || steps.unit_tests.conclusion == 'failure'

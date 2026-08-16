@@ -1,7 +1,7 @@
 $ErrorActionPreference = "Stop"
 
 # Get the projet's root directory
-$ProjectRoot = "$PSScriptRoot/../.."
+$ProjectRoot = Convert-Path("$PSScriptRoot/../..")
 
 Set-Location $ProjectRoot
 

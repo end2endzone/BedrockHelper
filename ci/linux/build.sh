@@ -41,3 +41,7 @@ echo "Building $(basename "$TARGET") version $VERSION..."
 go build -o $TARGET ./cmd/bedrock_helper
 
 echo "Build complete!"
+echo
+
+# Show compiled version
+$TARGET --version
