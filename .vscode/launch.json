@@ -33,6 +33,18 @@
             ]
         },
         {
+            "name": "bedrock_helper --version (verbose)",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/cmd/bedrock_helper",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "--version",
+                "--verbose"
+            ]
+        },
+        {
             "name": "bedrock_helper --help",
             "type": "go",
             "request": "launch",

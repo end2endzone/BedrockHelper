@@ -26,4 +26,4 @@ if ($env:CI -eq "true") {
 }
 
 # Show compiled version
-& $Target --version
+& $Target --version --verbose

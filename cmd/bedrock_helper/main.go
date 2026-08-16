@@ -35,8 +35,13 @@ func printHeader() {
 	fmt.Fprintf(os.Stdout, "bedrock_helper - install and manage Minecraft Bedrock add-on packs.\n")
 }
 
-func printVersion() {
+func printVersion(verbose bool) {
 	fmt.Fprintf(os.Stdout, "Version %s.\n", GetProductVersionString())
+
+	if verbose {
+		verboseVersion := GetProductVersionVerboseString()
+		fmt.Fprintf(os.Stdout, "%s", verboseVersion)
+	}
 }
 
 func reportArgumentParsingError(format string, args ...any) {
@@ -172,7 +177,7 @@ func printUsage(fs *flag.FlagSet) {
     bedrock_helper --resolve-pack <uuid> [--server-location <dir>] [--no-header]
     bedrock_helper --install-all [--server-location <dir>] [--no-header]
     bedrock_helper --uninstall-all [--server-location <dir>] [--no-header]
-    bedrock_helper --version
+    bedrock_helper --version [--verbose]
     bedrock_helper --help
 	`
 	fmt.Fprintln(output, usageText)
@@ -261,18 +266,19 @@ func run(args []string) int {
 	// In case of parsing errors, the error will be printed before the flag library will call our custom fs.Usage().
 	// So we must print the application's header or version before doing the actual parsing.
 	cfg.NoHeader = hasArgument("no-header")
+	cfg.Verbose = hasArgument("verbose")
 	cfg.Version = hasArgument("version")
 
 	// Should we only print the version ?
 	if cfg.Version {
-		printVersion()
+		printVersion(cfg.Verbose)
 		return 0
 	}
 
 	// Print application header, unless specified not to
 	if !cfg.NoHeader {
 		printHeader()
-		printVersion()
+		printVersion(false)
 	}
 
 	var err error
