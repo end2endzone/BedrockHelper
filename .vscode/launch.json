@@ -159,6 +159,20 @@
             ]
         },
         {
+            "name": "bedrock_helper --find-addons (verbose)",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/cmd/bedrock_helper",
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "debug: reset sandbox",
+            "args": [
+                "--find-addons",
+                "${workspaceFolder}/.debug-sandbox/testdata/addons",
+                "--verbose"
+            ]
+        },
+        {
             "name": "bedrock_helper --list-addons",
             "type": "go",
             "request": "launch",
