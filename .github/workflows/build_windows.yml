@@ -129,8 +129,8 @@ jobs:
         set /p PRODUCT_VERSION=<"VERSION"
         echo PRODUCT_VERSION=%PRODUCT_VERSION%
         echo PRODUCT_VERSION=%PRODUCT_VERSION%>> %GITHUB_ENV%
-        echo
-        ./ci/linux/print-version.bat
+        echo.
+        call ci\windows\print-version.bat
     
     - name: Archive installation packages
       if: success() || steps.unit_tests.conclusion == 'failure'
