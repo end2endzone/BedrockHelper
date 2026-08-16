@@ -204,8 +204,10 @@ func GetPseudoVersionFromMetadata() ProductVersion {
 	// For example, if you run your app using `go run .` or compile it locally without tags, Go sets info.Main.Version to the string "(devel)".
 	p.Version = version
 
-	// Truncate revision to 12 characters
-	p.CommitHash = revision[0:12]
+	// Truncate revision to 12 characters or less
+	if revision != "" {
+		p.CommitHash = revision[0:min(12, len(revision))]
+	}
 
 	// Parse datetime
 	{
@@ -310,15 +312,23 @@ func GetProductVersionVerboseString() string {
 	// Add detailed version string
 	msg := fmt.Sprintf("%s\n", info.Main.Version)
 
-	// Serialize BuildSettings to json
+	// Serialize info.BuildSettings to json and add to msg
 	jsonData, err := json.MarshalIndent(info.Settings, "", "  ")
 	if err != nil {
 		msg += fmt.Sprintf("error: %v\n", err)
 		return msg
 	}
+	msg += fmt.Sprintf("Settings: %v\n", string(jsonData))
 
-	// Add BuildSettings info to string
-	msg += fmt.Sprintf("%v\n", string(jsonData))
+	/*
+		// Serialize info.Deps to json and add to msg
+		jsonData, err = json.MarshalIndent(info.Deps, "", "  ")
+		if err != nil {
+			msg += fmt.Sprintf("error: %v\n", err)
+			return msg
+		}
+		msg += fmt.Sprintf("Deps: %v\n", string(jsonData))
+	*/
 
 	return msg
 }
