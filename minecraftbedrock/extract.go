@@ -103,7 +103,7 @@ func FindManifestsRelativePathInAddon(addonPath string) ([]string, error) {
 	}
 
 	if len(manifests) == 0 {
-		return nil, fmt.Errorf("no manifest.json files found inside %q", addonPath)
+		return nil, fmt.Errorf("no manifest.json file found inside %q", addonPath)
 	}
 
 	return manifests, nil
@@ -129,4 +129,57 @@ func readZipEntry(zipPath, entryName string) ([]byte, error) {
 	}
 
 	return nil, fmt.Errorf("entry %q not found in %q", entryName, zipPath)
+}
+
+// ZipFilePathJoin joins any number of path elements into a single path, separating them with a the ZIP specific separator `/`.
+// Empty elements are ignored.
+func ZipFilePathJoin(elem ...string) string {
+	var b strings.Builder
+	for _, value := range elem {
+		// Empty elements are ignored
+		if value == "" {
+			continue
+		}
+
+		// Zip file does not supports `.` and `..` directories
+		if value == "." {
+			continue
+		}
+
+		if b.Len() == 0 {
+			// first elements is the result
+			b.WriteString(value)
+		} else {
+			// following elements must have a separator
+			b.WriteString("/")
+			b.WriteString(value)
+		}
+	}
+	result := b.String()
+	return result
+}
+
+// ZipFilePathGetParentDir returns the parent directory of a given path.
+// The function supports both forward slashes and backslashes.
+func ZipFilePathGetParentDir(path string) string {
+	// Clean up trailing slashes so we don't look at the same folder
+	for len(path) > 1 && (path[len(path)-1] == '/' || path[len(path)-1] == '\\') {
+		path = path[:len(path)-1]
+	}
+
+	// Find the last forward slash or backslash
+	lastSlash := strings.LastIndexAny(path, "/\\")
+
+	// If no slash is found, there is no parent directory
+	if lastSlash == -1 {
+		return "." // return "." to have the same behavior as filepath.Dir()
+	}
+
+	// If the last slash is at the very beginning, return the root slash
+	if lastSlash == 0 {
+		return string(path[0])
+	}
+
+	// Return everything up to the last slash, exclusing the last slash
+	return path[:lastSlash]
 }

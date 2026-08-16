@@ -75,8 +75,36 @@ func LoadPackFromDirectory(path string) (*Pack, error) {
 		return nil, fmt.Errorf("failed to read a pack from directory %q: %v", path, err)
 	}
 
+	// Create the pack
 	pack := &Pack{
 		Path:     path,
+		Manifest: manifest,
+	}
+	return pack, nil
+}
+
+// LoadPackFromZip loads a pack stored in the given relative zip directory.
+// The given relative directory path must contains a manifest.json file to be a valid pack.
+// Returns a valid pack or an error otherwise.
+func LoadPackFromZip(zipPath string, packDir string) (*Pack, error) {
+	manifestRelativePath := ZipFilePathJoin(packDir, "manifest.json")
+
+	// Get tje manifest json RAW bytes
+	data, err := readZipEntry(zipPath, manifestRelativePath)
+	if err != nil {
+		return nil, err
+	}
+
+	// Parse it
+	manifest, err := LoadManifestFromBytes(data)
+	if err != nil {
+		manifestAbsolutePath := ZipFilePathJoin(zipPath, packDir, "manifest.json")
+		return nil, fmt.Errorf("failed to parse manifest in zip %q: %v", manifestAbsolutePath, err)
+	}
+
+	// Create the pack
+	pack := &Pack{
+		Path:     packDir,
 		Manifest: manifest,
 	}
 	return pack, nil
@@ -116,26 +144,9 @@ func LoadPacksFromSubdirectories(path string) ([]*Pack, error) {
 // Extension `.mcpack`  have a manifest.json file at the root directory.
 // Extension `.mcaddon` have a manifest.json file in each sub directory.
 // Returns an error if a directory containing a manifest.json which fails to load as a pack.
-// Returns am empty pack list when no manifest.json files is found
+// Returns am empty pack list when no manifest.json files is found.
 func LoadAllPacksFromDirectoriesOrSubdirectories(root string) ([]*Pack, error) {
 	var packs []*Pack
-
-	/*
-		// Try to load a pack at the root directory
-		rootPack, err1 := LoadPackFromDirectory(path)
-		if err1 == nil {
-			// success for the root directory
-			packs = append(packs, rootPack)
-			return packs, nil
-		}
-
-		// Try to fallback to loading packs from each subdirectories
-		packs, err2 := LoadPacksFromSubdirectories(path)
-		if err2 == nil {
-			// success for the sub directories
-			return packs, nil
-		}
-	*/
 
 	err := filepath.WalkDir(root, func(path string, dir fs.DirEntry, err error) error {
 		// If there is an error accessing a path, return it to stop walking
@@ -166,6 +177,42 @@ func LoadAllPacksFromDirectoriesOrSubdirectories(root string) ([]*Pack, error) {
 	if err != nil {
 		// An error occured while walking the directories
 		return nil, fmt.Errorf("failed to detect packs from directory %q: %v", root, err)
+	}
+
+	// Success
+	return packs, nil
+}
+
+// LoadPacksFromZip recursively traverses the given zip file to detect and load directories containing Packs.
+// This function is compatible with `.mcpack` and `.mcaddon` files.
+// Extension `.mcpack`  have a manifest.json file at the root directory.
+// Extension `.mcaddon` have a manifest.json file in each sub directory.
+// Returns an error if a directory containing a manifest.json which fails to load as a pack.
+// Returns am empty pack list when no manifest.json files is found.
+func LoadPacksFromZip(zipPath string) ([]*Pack, error) {
+	var packs []*Pack
+
+	// find all manifests inside the addon
+	relativeManifestPaths, err := FindManifestsRelativePathInAddon(zipPath)
+	if err != nil {
+		return nil, err
+	}
+
+	// for each manifest
+	for _, relativeManifestPath := range relativeManifestPaths {
+		relativePackDir := ZipFilePathGetParentDir(relativeManifestPath)
+		if relativePackDir == "." {
+			relativePackDir = "" // zip files do not support `.` and `..` directories
+		}
+
+		// Parse it
+		pack, err := LoadPackFromZip(zipPath, relativePackDir)
+		if err != nil {
+			return nil, err
+		}
+
+		// Keep it
+		packs = append(packs, pack)
 	}
 
 	// Success

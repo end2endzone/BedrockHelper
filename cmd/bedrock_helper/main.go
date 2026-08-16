@@ -22,6 +22,7 @@ type Config struct {
 	InstallAll     bool
 	UninstallAll   bool
 	NoHeader       bool
+	Verbose        bool
 	Version        bool
 	Help           bool
 }
@@ -84,6 +85,7 @@ func newBedrockFlagSet(cfg *Config) *flag.FlagSet {
 	fs.BoolVar(&cfg.InstallAll, "install-all", false, "|Scan the target server directory for add-on files and install every one that is found.")
 	fs.BoolVar(&cfg.UninstallAll, "uninstall-all", false, "|Scan the target server directory for add-on files and uninstall every one that is found.")
 	fs.BoolVar(&cfg.NoHeader, "no-header", false, "|Do not show product header when running a command.")
+	fs.BoolVar(&cfg.Verbose, "verbose", false, "|Enable verbose output for the command.")
 	fs.BoolVar(&cfg.Version, "version", false, "|Show the product version.")
 
 	// The flag library automatically registers `--help`, `-help` and `-h` flags.
@@ -122,7 +124,8 @@ func getOrderedFlags(fs *flag.FlagSet) []*flag.Flag {
 
 	// Create a slice with all flags, skipping some flags...
 	fs.VisitAll(func(f *flag.Flag) {
-		if f.Name == "version" ||
+		if f.Name == "verbose" ||
+			f.Name == "version" ||
 			f.Name == "help" ||
 			f.Name == "no-header" {
 			return // skip
@@ -132,6 +135,7 @@ func getOrderedFlags(fs *flag.FlagSet) []*flag.Flag {
 
 	// Add our bottom flags at the end of the list.
 	flags = append(flags, fs.Lookup("no-header"))
+	flags = append(flags, fs.Lookup("verbose"))
 	flags = append(flags, fs.Lookup("version"))
 	flags = append(flags, fs.Lookup("help"))
 
@@ -163,7 +167,7 @@ func printUsage(fs *flag.FlagSet) {
 	const usageText = `Usage:
     bedrock_helper --install <path> [--server-location <dir>] [--no-header]
     bedrock_helper --uninstall <path-or-uuid> [--server-location <dir>] [--no-header]
-    bedrock_helper --find-addons <path> [--no-header]
+    bedrock_helper --find-addons <path> [--no-header] [--verbose]
     bedrock_helper --list-addons [--server-location <dir>] [--no-header]
     bedrock_helper --resolve-pack <uuid> [--server-location <dir>] [--no-header]
     bedrock_helper --install-all [--server-location <dir>] [--no-header]
@@ -339,7 +343,7 @@ func run(args []string) int {
 	case cfg.Uninstall != "":
 		err = cmdUninstall(cfg.Uninstall, cfg.ServerLocation)
 	case cfg.FindAddons != "":
-		err = cmdFindAddons(cfg.FindAddons)
+		err = cmdFindAddons(cfg.FindAddons, cfg.Verbose)
 	case cfg.ListAddons:
 		err = cmdListAddons(cfg.ServerLocation)
 	case cfg.ResolvePack != "":
@@ -416,7 +420,7 @@ func cmdUninstall(arg string, serverLocation string) error {
 }
 
 // cmdFindAddons search the given directory recursively for files that look like add-on packs and list them.
-func cmdFindAddons(findAddons string) error {
+func cmdFindAddons(findAddons string, verbose bool) error {
 	addons, err := lib.FindAddonsInDir(findAddons, true)
 	if err != nil {
 		return err
@@ -429,9 +433,29 @@ func cmdFindAddons(findAddons string) error {
 
 	// List hist
 	fmt.Println("Found the following addons files:")
-	for _, a := range addons {
-		fmt.Printf("  * %v\n", a)
+	for _, addonPath := range addons {
+		if !verbose {
+			fmt.Printf("  * %v\n", addonPath)
+		} else {
+			// Verbose output.
+			fmt.Printf("  * %v\n", addonPath)
+
+			// Also list UUID for each match
+			packs, err := lib.LoadPacksFromZip(addonPath)
+			if err != nil {
+				// on error, print the error but continue listing packs for other packs found
+				fmt.Fprintf(os.Stderr, "      error listing packs: %v\n", err)
+				continue
+			}
+
+			// List packs of this addon
+			for _, pack := range packs {
+				desc := pack.Description()
+				fmt.Printf("      * %v\n", desc)
+			}
+		}
 	}
+
 	return nil
 }
 
