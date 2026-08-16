@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"runtime/debug"
 	"strconv"
@@ -243,5 +244,28 @@ func GetProductVersionString() string {
 	p := GetProductVersion()
 
 	msg := fmt.Sprintf("%s (%s) compiled on %s", p.Version, p.CommitHash, p.BuildDate)
+	return msg
+}
+
+func GetProductVersionVerboseString() string {
+	info, ok := debug.ReadBuildInfo()
+	if !ok {
+		// Can't do better
+		return ""
+	}
+
+	// Add detailed version string
+	msg := fmt.Sprintf("%s\n", info.Main.Version)
+
+	// Serialize BuildSettings to json
+	jsonData, err := json.MarshalIndent(info.Settings, "", "  ")
+	if err != nil {
+		msg += fmt.Sprintf("error: %v\n", err)
+		return msg
+	}
+
+	// Add BuildSettings info to string
+	msg += fmt.Sprintf("%v\n", string(jsonData))
+
 	return msg
 }

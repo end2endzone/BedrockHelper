@@ -30,4 +30,4 @@ if [[ "$CI" == "true" ]]; then
 fi
 
 # Show compiled version
-$TARGET --version
+$TARGET --version --verbose
