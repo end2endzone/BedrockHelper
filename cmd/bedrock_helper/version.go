@@ -13,7 +13,7 @@ import (
 const (
 	InvalidVersion    = "0.0.0"
 	InvalidCommitHash = "0000000"
-	InvalidBuildTime  = "1900-01-01"
+	InvalidBuildDate  = "1900-01-01"
 )
 
 // These variables are legacy variables that could be populated at build time using `-ldflags`.
@@ -21,13 +21,20 @@ const (
 var (
 	Version    = InvalidVersion
 	CommitHash = InvalidCommitHash
-	BuildDate  = InvalidBuildTime
+	BuildDate  = InvalidBuildDate
 )
 
 type ProductVersion struct {
 	Version    string
 	CommitHash string
 	BuildDate  string
+}
+
+func (p ProductVersion) IsValid() bool {
+	if p.Version != InvalidVersion && p.CommitHash != InvalidCommitHash && p.BuildDate != InvalidBuildDate {
+		return true
+	}
+	return false
 }
 
 /*
@@ -170,16 +177,25 @@ func getVersionControlValuesFromMetadata() (version, revision, datetime string) 
 	return
 }
 
+func CreateInvalidProductVersion() ProductVersion {
+	p := ProductVersion{
+		Version:    InvalidVersion,
+		CommitHash: InvalidCommitHash,
+		BuildDate:  InvalidBuildDate,
+	}
+	return p
+}
+
 // GetPseudoVersionFromMetadata parses the go pseudo-version into a ProductVersion.
 // A pseudo-version is a string in format "v[version]-[datetime]-[revision][dirtybit]".
 // For example: "v1.2.3-20260815131415-de3798c09c08+dirty".
 func GetPseudoVersionFromMetadata() ProductVersion {
-	p := ProductVersion{}
+	p := CreateInvalidProductVersion()
 
 	version, revision, datetime := getVersionControlValuesFromMetadata()
 	if version == "" {
 		// Metadata not available
-		// Can't do better
+		// Return an invalid ProductVersion
 		return p
 	}
 
@@ -255,21 +271,26 @@ func GetPseudoVersionFromMetadata() ProductVersion {
 }
 
 func GetProductVersion() ProductVersion {
-	// Create a product version from local variables.
-	p := ProductVersion{
+	// Create a product version from local legacy variables.
+	local := ProductVersion{
 		Version:    Version,
 		CommitHash: CommitHash,
 		BuildDate:  BuildDate,
 	}
 
 	// If the product version was set with the legacy `-ldflags` command line at build time, use that.
-	if p.Version != InvalidVersion {
-		return p
+	if local.IsValid() {
+		return local
 	}
 
 	// Get a valid the product version from metadata
-	p = GetPseudoVersionFromMetadata()
-	return p
+	metadata := GetPseudoVersionFromMetadata()
+	if metadata.IsValid() {
+		return metadata
+	}
+
+	// Return an invalid version.
+	return CreateInvalidProductVersion()
 }
 
 func GetProductVersionString() string {
