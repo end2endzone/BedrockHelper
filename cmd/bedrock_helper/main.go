@@ -443,6 +443,11 @@ func cmdFindAddons(findAddons string, verbose bool) error {
 			// Also list UUID for each match
 			packs, err := lib.LoadPacksFromZip(addonPath)
 			if err != nil {
+				// Make sure the error from os.Stderr shows under the right os.Stdout.
+				// Forces both descriptors to flush immediately.
+				os.Stdout.Sync()
+				os.Stderr.Sync()
+
 				// on error, print the error but continue listing packs for other packs found
 				fmt.Fprintf(os.Stderr, "      error listing packs: %v\n", err)
 				continue
