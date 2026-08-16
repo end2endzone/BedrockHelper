@@ -6,6 +6,22 @@ PROJECTROOT=$(cd "$(dirname "$0")/../.." && pwd)
 
 cd $PROJECTROOT
 
+# GOOS
+if [[ -n "${GOOS}" ]]; then
+    echo "GOOS is set to: $GOOS"
+else
+    GOOS=$(go env GOHOSTOS)
+    echo "GOOS is not set and is forced to: $GOOS"
+fi
+
+# GOARCH
+if [[ -n "${GOARCH}" ]]; then
+    echo "GOARCH is set to: $GOARCH"
+else
+    GOARCH=$(go env GOHOSTARCH)
+    echo "GOARCH is not set and is forced to: $GOARCH"
+fi
+
 # Define the target binary file path based on the environment
 TARGET="$PROJECTROOT/bin/bedrock_helper"
 if [[ "$CI" == "true" ]]; then

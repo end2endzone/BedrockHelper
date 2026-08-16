@@ -43,7 +43,4 @@ go build -o $Target ./cmd/bedrock_helper
 Write-Host "Build complete!"
 Write-Host
 
-# Show compiled version
-& $Target --version
-
 Pop-Location
