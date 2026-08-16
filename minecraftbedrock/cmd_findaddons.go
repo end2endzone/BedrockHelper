@@ -5,6 +5,23 @@ import (
 	"path/filepath"
 )
 
+func processFileAddonEntry(path string, results *[]string) {
+	// Check file extension
+	if !IsValidAddonFileExtension(path) {
+		// Invalid
+		return
+	}
+
+	// Run full check for file
+	if !IsValidAddonFile(path) {
+		// Invalid
+		return
+	}
+
+	// Valid. Add to matching results
+	*results = append(*results, path)
+}
+
 // FindAddonsInDir searches dir (resursively, if recursive is true) for files that are valid add-on packs.
 // It returns their absolute paths.
 func FindAddonsInDir(dir string, recursive bool) ([]string, error) {
@@ -21,20 +38,15 @@ func FindAddonsInDir(dir string, recursive bool) ([]string, error) {
 				return nil
 			}
 
-			// check file extension
-			if !IsValidAddonFileExtension(path) {
-				// skip invalid file extension
-				return nil
+			// Make the path absolute
+			abs, err := filepath.Abs(path)
+			if err == nil {
+				path = abs
 			}
 
-			// run full check for file
-			if IsValidAddonFile(path) {
-				abs, err := filepath.Abs(path)
-				if err != nil {
-					abs = path
-				}
-				results = append(results, abs)
-			}
+			// Process entry
+			processFileAddonEntry(path, &results)
+
 			return nil
 		})
 
@@ -56,23 +68,11 @@ func FindAddonsInDir(dir string, recursive bool) ([]string, error) {
 			continue
 		}
 
-		// check file extension
+		// Make the path absolute
 		path := filepath.Join(dir, e.Name())
-		if !IsValidAddonFileExtension(path) {
-			// skip invalid file extension
-			continue
-		}
 
-		// run full check for file
-		if IsValidAddonFile(path) {
-			abs, err := filepath.Abs(path)
-			if err != nil {
-				abs = path
-			}
-
-			// valid result
-			results = append(results, abs)
-		}
+		// Process entry
+		processFileAddonEntry(path, &results)
 	}
 
 	return results, nil
