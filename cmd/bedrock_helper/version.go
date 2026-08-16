@@ -4,18 +4,24 @@ import (
 	"encoding/json"
 	"fmt"
 	"runtime/debug"
-	"strconv"
 	"strings"
 	"time"
 
 	"golang.org/x/mod/semver"
 )
 
-// These variables are populated at build time using -ldflags
+const (
+	InvalidVersion    = "0.0.0"
+	InvalidCommitHash = "0000000"
+	InvalidBuildTime  = "1900-01-01"
+)
+
+// These variables are legacy variables that could be populated at build time using `-ldflags`.
+// They are normally left unchanged in recent versions of this product.
 var (
-	Version    = "0.0.0"
-	CommitHash = "0000000"
-	BuildDate  = "1900-01-01"
+	Version    = InvalidVersion
+	CommitHash = InvalidCommitHash
+	BuildDate  = InvalidBuildTime
 )
 
 type ProductVersion struct {
@@ -24,6 +30,7 @@ type ProductVersion struct {
 	BuildDate  string
 }
 
+/*
 // isNumberInRange validate that the given input str is a number in the range [min;max]
 // Returns true when the input is in range. Returns false otherwise.
 func isNumberInRange(str string, min int, max int) bool {
@@ -133,48 +140,115 @@ func findGitHashInSemVer(input string) string {
 
 	return ""
 }
+*/
 
-// parseDateTimeAndGitHash parse a datetime and a git hash from the given semantic version string.
-// Returns  ok when the input string is a semantic prerelease string containing a datetime and a git hash.
-// Returns !ok otherwise
-func parseDateTimeAndGitHash(input string) (datetime string, githash string, ok bool) {
-	// example: v0.1.1-0.20260815155314-4ad116a8bdf3
-
-	datetime = findDateTimeInSemVer(input)
-	githash = findGitHashInSemVer(input)
-
-	if datetime != "" && githash != "" {
-		return datetime, githash, true
+// getVersionControlRevisionFromMetadata get the values from version control system from the metadata injected at build time.
+// For example:
+//   - version : `v0.1.1-0.20260815155314-4ad116a8bdf3`
+//   - revision: `6cb0ce064a20aeb026d039c12e7ab83b10ad1c63`
+//   - datetime: `2026-08-16T15:12:22Z`
+//
+// Returns empty value on error or when metadata is not available.
+func getVersionControlValuesFromMetadata() (version, revision, datetime string) {
+	info, ok := debug.ReadBuildInfo()
+	if !ok {
+		// Metadata not available
+		return
 	}
 
-	return "", "", false
+	version = info.Main.Version
+
+	for _, setting := range info.Settings {
+		switch setting.Key {
+		case "vcs.revision":
+			revision = setting.Value
+		case "vcs.time":
+			datetime = setting.Value
+		}
+	}
+
+	return
 }
 
-// GetSemanticVersionFromDebugBuildInfo parses a go pseudo-version into a ProductVersion.
-// A pseudo-version is a string in format "v1.2.3-20260815131415-de3798c09c08+dirty".
-func parsePseudoVersion(input string) ProductVersion {
+// GetPseudoVersionFromMetadata parses the go pseudo-version into a ProductVersion.
+// A pseudo-version is a string in format "v[version]-[datetime]-[revision][dirtybit]".
+// For example: "v1.2.3-20260815131415-de3798c09c08+dirty".
+func GetPseudoVersionFromMetadata() ProductVersion {
 	p := ProductVersion{}
 
-	// semver.Canonical removes the "+dirty" and standardizes it
-	canonical := semver.Canonical(input)
+	version, revision, datetime := getVersionControlValuesFromMetadata()
+	if version == "" {
+		// Metadata not available
+		// Can't do better
+		return p
+	}
+
+	// Version: if installed via `go install` tagged release (for example `@v1.2.3`)
+	// Warning: version can default to `(devel)` if run locally or built without version flags.
+	// For example, if you run your app using `go run .` or compile it locally without tags, Go sets info.Main.Version to the string "(devel)".
+	p.Version = version
+
+	// Truncate revision to 12 characters
+	p.CommitHash = revision[0:12]
+
+	// Parse datetime
+	{
+		p.BuildDate = datetime
+
+		// Example value: `2026-08-15T13:14:15Z`. Try to truncate for keeping only the date
+
+		// Parse the string directly into a time.Time object
+		buildTime, err := time.Parse(time.RFC3339, datetime)
+		if err == nil {
+			year, month, day := buildTime.Date()
+			p.BuildDate = fmt.Sprintf("%d-%02d-%02d", year, month, day)
+		}
+	}
+
+	// Remove `+dirty` from version and standardizes it
+	p.Version = semver.Canonical(p.Version)
 
 	// Strip the leading "v" if you strictly want the digits and pre-release labels
-	canonical = strings.TrimPrefix(canonical, "v")
+	p.Version = strings.TrimPrefix(p.Version, "v")
 
-	p.Version = canonical
+	// Remove datetime from version string
+	{
+		// datetime == "2026-08-16T15:12:22Z"
+		// version == "v1.2.3-20260816151222-de3798c09c08"
 
-	// Can we extract datetime and githash from pre-release labels ?
-	prerelease := semver.Prerelease(input)
-	datetime, githash, ok := parseDateTimeAndGitHash(prerelease)
-	if ok {
-		// remove githash and datetime in p.Version
-		p.Version = strings.ReplaceAll(p.Version, "-"+datetime, "")
-		p.Version = strings.ReplaceAll(p.Version, "."+datetime, "")
-		p.Version = strings.ReplaceAll(p.Version, "-"+githash, "")
-		p.Version = strings.ReplaceAll(p.Version, "."+githash, "")
+		pattern := datetime
+		pattern = strings.ReplaceAll(pattern, "-", "")
+		pattern = strings.ReplaceAll(pattern, "T", "")
+		pattern = strings.ReplaceAll(pattern, ":", "")
+		pattern = strings.ReplaceAll(pattern, "Z", "")
 
-		p.BuildDate = datetime[0:4] + "-" + datetime[4:6] + "-" + datetime[6:8]
-		p.CommitHash = githash
+		// datetime can sometime show as `-20260816154451` or as `.20260816154451`.
+		pattern1 := "-" + pattern
+		pattern2 := "." + pattern
+
+		// Remove the pattern from the version
+		p.Version = strings.ReplaceAll(p.Version, pattern1, "")
+		p.Version = strings.ReplaceAll(p.Version, pattern2, "")
+	}
+
+	// Remove git hash from version string
+	{
+		// revision == "de3798c09c08aeb026d039c12e7ab83b10ad1c63"
+		// version == "v1.2.3-20260816151222-de3798c09c08"
+
+		for i := len(revision) - 1; i >= 0; i-- {
+			pattern := "-" + revision[0:i+1]
+
+			// Remove the pattern from the version
+			before := len(p.Version)
+			p.Version = strings.ReplaceAll(p.Version, pattern, "")
+			after := len(p.Version)
+
+			if before != after {
+				// We found the pattern, stop trying
+				break
+			}
+		}
 	}
 
 	return p
@@ -188,55 +262,13 @@ func GetProductVersion() ProductVersion {
 		BuildDate:  BuildDate,
 	}
 
-	// If the product version was set with the legacy `-ldflags` command line at build time
-	if p.Version != "0.0.0" {
+	// If the product version was set with the legacy `-ldflags` command line at build time, use that.
+	if p.Version != InvalidVersion {
 		return p
 	}
 
-	// Try to parse values which are automatically embedded by Go toolchain
-	info, ok := debug.ReadBuildInfo()
-	if !ok {
-		// Can't do better
-		return p
-	}
-
-	// Git Hash and Commit Date: Automatically embedded by Go toolchain
-	for _, setting := range info.Settings {
-		switch setting.Key {
-		case "vcs.revision":
-			p.CommitHash = setting.Value[0:11]
-		case "vcs.time":
-			p.BuildDate = setting.Value
-
-			// Example value: `2026-08-15T13:14:15Z`. Try to truncate for keeping only the date
-
-			// Parse the string directly into a time.Time object
-			buildTime, err := time.Parse(time.RFC3339, setting.Value)
-			if err != nil {
-				continue // keep p.BuildDate as is
-			}
-
-			year, month, day := buildTime.Date()
-			p.BuildDate = fmt.Sprintf("%d-%02d-%02d", year, month, day)
-		}
-	}
-
-	// Version: if installed via `go install` tagged release (for example `@v1.2.3`)
-	// Warning: version can default to `(devel)` if run locally or built without version flags.
-	// For example, if you run your app using `go run` . or compile it locally without tags, Go sets info.Main.Version to the string "(devel)".
-	if info.Main.Version != "" {
-		p.Version = info.Main.Version
-	}
-
-	if p.Version == "(devel)" {
-		// Can't do better
-		return p
-	}
-
-	// Assume info.Main.Version is in format `v1.2.3-20260815131415-de3798c09c08+dirty`.
-	pseudo := parsePseudoVersion(info.Main.Version)
-	p.Version = pseudo.Version
-
+	// Get a valid the product version from metadata
+	p = GetPseudoVersionFromMetadata()
 	return p
 }
 
