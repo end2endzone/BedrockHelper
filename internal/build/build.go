@@ -1,37 +1,28 @@
 package build
 
 import (
-	"encoding/json"
 	"fmt"
-	"os"
 	"runtime/debug"
 )
 
-func PrintBuildInfoMetadata() {
+func GetBuildTagFromMetadata() (string, error) {
 	info, ok := debug.ReadBuildInfo()
 	if !ok {
-		fmt.Fprintf(os.Stderr, "build-info-metadata not available\n")
-		return
+		err := fmt.Errorf("build-info metadata not available")
+		return "", err
 	}
 
-	// Add detailed version string
-	fmt.Fprintf(os.Stdout, "info.Main.Version=%s\n", info.Main.Version)
-	fmt.Fprintf(os.Stdout, "info.Path=%s\n", info.Path)
-	fmt.Fprintf(os.Stdout, "info.Main.Path=%s\n", info.Main.Path)
+	// When compiling using `go install URL@tag` the `info.Main.Version` variable contains the name of the tag used.
+	// For example, when running `go install github.com/username/reponame/cmd/my-app@v0.2.0-alpha` Go's toolchain/compiler
+	// will set info.Main.Version to `v0.2.0-alpha`.
 
-	// Serialize info.BuildSettings to json and add to msg
-	jsonData, err := json.MarshalIndent(info.Settings, "", "  ")
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "%v\n", err)
-		return
-	}
-	fmt.Fprintf(os.Stdout, "info.Settings=%s\n", string(jsonData))
+	// When using `latest` for tag, Go's install command will find the latest tag that is not `alpha`, `beta`, etc.
+	// For example, when the following tag exists:
+	// - v0.2.0
+	// - v0.3.0
+	// - v0.3.1-alpha
+	// - v0.3.1-beta
+	// Go's toolchain/compiler will resolve the latest version as v0.3.0 and will set info.Main.Version to `v0.3.0`.
 
-	// Serialize info.Deps to json and add to msg
-	jsonData, err = json.MarshalIndent(info.Deps, "", "  ")
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "%v\n", err)
-		return
-	}
-	fmt.Fprintf(os.Stdout, "info.Deps=%s\n", string(jsonData))
+	return info.Main.Version, nil
 }

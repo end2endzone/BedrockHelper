@@ -9,6 +9,8 @@ import (
 
 	_ "embed"
 
+	"github.com/end2endzone/BedrockHelper/internal/build"
+
 	"golang.org/x/mod/semver"
 )
 
@@ -296,12 +298,22 @@ func GetProductVersion() ProductVersion {
 		return metadata
 	}
 
-	// Build a ProductVersion without automatic versionning from git tags.
-	// Use VERSION file instead. This product version is still invalid because it has no CommitHash and no BuildDate.
+	// Try to build a ProductVersion from the internal build package.
+	tagName, err := build.GetBuildTagFromMetadata()
+	if err == nil {
+		// This product version is still invalid because it has no CommitHash and no BuildDate.
+		// It will require a different formatting
+		p := CreateInvalidProductVersion()
+		p.Version = tagName
+		return p
+	}
+
+	// Build a ProductVersion without automatic versioning from git tags.
+	// Use VERSION file instead.
+	// This product version is still invalid because it has no CommitHash and no BuildDate.
 	// It will require a different formatting
 	p := CreateInvalidProductVersion()
 	p.Version = fileVersion
-
 	return p
 }
 
