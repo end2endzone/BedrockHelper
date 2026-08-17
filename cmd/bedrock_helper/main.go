@@ -41,11 +41,8 @@ func printVersion(verbose bool) {
 	fmt.Fprintf(os.Stdout, "Version %s.\n", version.GetProductVersionString())
 
 	if verbose {
-		verboseVersion := version.GetProductVersionVerboseString()
-		fmt.Fprintf(os.Stdout, "%s", verboseVersion)
-
-		fmt.Fprintf(os.Stdout, "Build metadata:\n")
-		build.PrintBuildInfoMetadata()
+		metadata := build.GetBuildMetadata()
+		fmt.Fprintf(os.Stdout, "Build metadata:%s\n", metadata)
 	}
 }
 

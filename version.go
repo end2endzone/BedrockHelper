@@ -1,9 +1,7 @@
 package version
 
 import (
-	"encoding/json"
 	"fmt"
-	"runtime/debug"
 	"strings"
 	"time"
 
@@ -156,34 +154,6 @@ func findGitHashInSemVer(input string) string {
 }
 */
 
-// getVersionControlRevisionFromMetadata get the values from version control system from the metadata injected at build time.
-// For example:
-//   - version : `v0.1.1-0.20260815155314-4ad116a8bdf3`
-//   - revision: `6cb0ce064a20aeb026d039c12e7ab83b10ad1c63`
-//   - datetime: `2026-08-16T15:12:22Z`
-//
-// Returns empty value on error or when metadata is not available.
-func getVersionControlValuesFromMetadata() (version, revision, datetime string) {
-	info, ok := debug.ReadBuildInfo()
-	if !ok {
-		// Metadata not available
-		return
-	}
-
-	version = info.Main.Version
-
-	for _, setting := range info.Settings {
-		switch setting.Key {
-		case "vcs.revision":
-			revision = setting.Value
-		case "vcs.time":
-			datetime = setting.Value
-		}
-	}
-
-	return
-}
-
 func CreateInvalidProductVersion() ProductVersion {
 	p := ProductVersion{
 		Version:    InvalidVersion,
@@ -199,9 +169,10 @@ func CreateInvalidProductVersion() ProductVersion {
 func GetPseudoVersionFromMetadata() ProductVersion {
 	p := CreateInvalidProductVersion()
 
-	version, revision, datetime := getVersionControlValuesFromMetadata()
-	if version == "" {
-		// Metadata not available
+	version := build.GetVersionFromMetadata()
+	revision, datetime := build.GetGitHashAndDateFromMetadata()
+	if version == "" || revision == "" || datetime == "" {
+		// Metadata not available or not compiled from git version control.
 		// Return an invalid ProductVersion
 		return p
 	}
@@ -299,8 +270,8 @@ func GetProductVersion() ProductVersion {
 	}
 
 	// Try to build a ProductVersion from the internal build package.
-	tagName, err := build.GetBuildTagFromMetadata()
-	if err == nil {
+	tagName := build.GetVersionFromMetadata()
+	if tagName != "" {
 		// This product version is still invalid because it has no CommitHash and no BuildDate.
 		// It will require a different formatting
 		p := CreateInvalidProductVersion()
@@ -327,37 +298,6 @@ func GetProductVersionString() string {
 		// Invalid version. Assume only p.Version is valid.
 		msg = fmt.Sprintf("%s", p.Version)
 	}
-
-	return msg
-}
-
-func GetProductVersionVerboseString() string {
-	info, ok := debug.ReadBuildInfo()
-	if !ok {
-		// Can't do better
-		return ""
-	}
-
-	// Add detailed version string
-	msg := fmt.Sprintf("%s\n", info.Main.Version)
-
-	// Serialize info.BuildSettings to json and add to msg
-	jsonData, err := json.MarshalIndent(info.Settings, "", "  ")
-	if err != nil {
-		msg += fmt.Sprintf("error: %v\n", err)
-		return msg
-	}
-	msg += fmt.Sprintf("Settings: %v\n", string(jsonData))
-
-	/*
-		// Serialize info.Deps to json and add to msg
-		jsonData, err = json.MarshalIndent(info.Deps, "", "  ")
-		if err != nil {
-			msg += fmt.Sprintf("error: %v\n", err)
-			return msg
-		}
-		msg += fmt.Sprintf("Deps: %v\n", string(jsonData))
-	*/
 
 	return msg
 }
