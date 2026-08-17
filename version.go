@@ -7,8 +7,13 @@ import (
 	"strings"
 	"time"
 
+	_ "embed"
+
 	"golang.org/x/mod/semver"
 )
+
+//go:embed VERSION
+var fileVersion string
 
 const (
 	InvalidVersion    = "0.0.0"
@@ -291,14 +296,26 @@ func GetProductVersion() ProductVersion {
 		return metadata
 	}
 
-	// Return an invalid version.
-	return CreateInvalidProductVersion()
+	// Build a ProductVersion without automatic versionning from git tags.
+	// Use VERSION file instead. This product version is still invalid because it has no CommitHash and no BuildDate.
+	// It will require a different formatting
+	p := CreateInvalidProductVersion()
+	p.Version = fileVersion
+
+	return p
 }
 
 func GetProductVersionString() string {
 	p := GetProductVersion()
 
-	msg := fmt.Sprintf("%s (%s) compiled on %s", p.Version, p.CommitHash, p.BuildDate)
+	var msg string
+	if p.IsValid() {
+		msg = fmt.Sprintf("%s (%s) last modified on %s", p.Version, p.CommitHash, p.BuildDate)
+	} else {
+		// Invalid version. Assume only p.Version is valid.
+		msg = fmt.Sprintf("%s", p.Version)
+	}
+
 	return msg
 }
 
