@@ -163,10 +163,10 @@ func CreateInvalidProductVersion() ProductVersion {
 	return p
 }
 
-// GetPseudoVersionFromMetadata parses the go pseudo-version into a ProductVersion.
+// GetProductVersionFromMetadata parses the go pseudo-version into a ProductVersion.
 // A pseudo-version is a string in format "v[version]-[datetime]-[revision][dirtybit]".
 // For example: "v1.2.3-20260815131415-de3798c09c08+dirty".
-func GetPseudoVersionFromMetadata() ProductVersion {
+func GetProductVersionFromMetadata() ProductVersion {
 	p := CreateInvalidProductVersion()
 
 	version := build.GetVersionFromMetadata()
@@ -264,12 +264,12 @@ func GetProductVersion() ProductVersion {
 	}
 
 	// Get a valid the product version from metadata
-	metadata := GetPseudoVersionFromMetadata()
+	metadata := GetProductVersionFromMetadata()
 	if metadata.IsValid() {
 		return metadata
 	}
 
-	// Try to build a ProductVersion from the internal build package.
+	// Try to build a ProductVersion from the version metadata.
 	tagName := build.GetVersionFromMetadata()
 	if tagName != "" {
 		// This product version is still invalid because it has no CommitHash and no BuildDate.
@@ -279,8 +279,7 @@ func GetProductVersion() ProductVersion {
 		return p
 	}
 
-	// Build a ProductVersion without automatic versioning from git tags.
-	// Use VERSION file instead.
+	// Build a ProductVersion from the VERSION file instead.
 	// This product version is still invalid because it has no CommitHash and no BuildDate.
 	// It will require a different formatting
 	p := CreateInvalidProductVersion()
@@ -295,7 +294,7 @@ func GetProductVersionString() string {
 	if p.IsValid() {
 		msg = fmt.Sprintf("%s (%s) last modified on %s", p.Version, p.CommitHash, p.BuildDate)
 	} else {
-		// Invalid version. Assume only p.Version is valid.
+		// Invalid product version. Assume only p.Version is valid.
 		msg = fmt.Sprintf("%s", p.Version)
 	}
 
