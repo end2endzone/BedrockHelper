@@ -178,8 +178,15 @@ func GetProductVersionFromMetadata() ProductVersion {
 	// For example, if you run your app using `go run .` or compile it locally without tags, Go sets info.Main.Version to the string "(devel)".
 	p.Version = version
 
-	// Truncate revision to 12 characters or less
+	// Remove `+dirty` from version and standardizes it
+	p.Version = semver.Canonical(p.Version)
+
+	// Strip the leading "v" to only get the digits and pre-release labels
+	p.Version = strings.TrimPrefix(p.Version, "v")
+
+	// Parse revision
 	if revision != "" {
+		// Truncate revision to 12 characters or less
 		p.CommitHash = revision[0:min(12, len(revision))]
 	}
 
@@ -196,12 +203,6 @@ func GetProductVersionFromMetadata() ProductVersion {
 			p.BuildDate = fmt.Sprintf("%d-%02d-%02d", year, month, day)
 		}
 	}
-
-	// Remove `+dirty` from version and standardizes it
-	p.Version = semver.Canonical(p.Version)
-
-	// Strip the leading "v" if you strictly want the digits and pre-release labels
-	p.Version = strings.TrimPrefix(p.Version, "v")
 
 	// Remove datetime from version string
 	{
@@ -268,6 +269,9 @@ func GetProductVersion() ProductVersion {
 	// Try to build a ProductVersion from the version metadata.
 	tagName := build.GetVersionFromMetadata()
 	if tagName != "" {
+		// Strip the leading "v" to only get the digits and pre-release labels
+		tagName = strings.TrimPrefix(tagName, "v")
+
 		// This product version is still invalid because it has no CommitHash and no BuildDate.
 		// It will require a different formatting
 		p := CreateInvalidProductVersion()
@@ -288,7 +292,8 @@ func GetProductVersionString() string {
 
 	var msg string
 	if p.IsValid() {
-		msg = fmt.Sprintf("%s (%s) last modified on %s", p.Version, p.CommitHash, p.BuildDate)
+		// Version 0.3.1-rc1 (820b508a0f53, released 2026-08-18)
+		msg = fmt.Sprintf("%s (%s, released %s)", p.Version, p.CommitHash, p.BuildDate)
 	} else {
 		// Invalid product version. Assume only p.Version is valid.
 		msg = fmt.Sprintf("%s", p.Version)
