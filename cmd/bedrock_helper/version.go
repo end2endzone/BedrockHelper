@@ -1,19 +1,15 @@
-package version
+package main
 
 import (
 	"fmt"
 	"strings"
 	"time"
 
-	_ "embed"
-
+	root "github.com/end2endzone/BedrockHelper"
 	"github.com/end2endzone/BedrockHelper/internal/build"
 
 	"golang.org/x/mod/semver"
 )
-
-//go:embed VERSION
-var fileVersion string
 
 const (
 	InvalidVersion    = "0.0.0"
@@ -283,7 +279,7 @@ func GetProductVersion() ProductVersion {
 	// This product version is still invalid because it has no CommitHash and no BuildDate.
 	// It will require a different formatting
 	p := CreateInvalidProductVersion()
-	p.Version = fileVersion
+	p.Version = root.GetVersionFromVersionFile()
 	return p
 }
 
