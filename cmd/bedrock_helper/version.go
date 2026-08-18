@@ -1,11 +1,12 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
-	"runtime/debug"
 	"strings"
 	"time"
+
+	root "github.com/end2endzone/BedrockHelper"
+	"github.com/end2endzone/BedrockHelper/internal/build"
 
 	"golang.org/x/mod/semver"
 )
@@ -149,34 +150,6 @@ func findGitHashInSemVer(input string) string {
 }
 */
 
-// getVersionControlRevisionFromMetadata get the values from version control system from the metadata injected at build time.
-// For example:
-//   - version : `v0.1.1-0.20260815155314-4ad116a8bdf3`
-//   - revision: `6cb0ce064a20aeb026d039c12e7ab83b10ad1c63`
-//   - datetime: `2026-08-16T15:12:22Z`
-//
-// Returns empty value on error or when metadata is not available.
-func getVersionControlValuesFromMetadata() (version, revision, datetime string) {
-	info, ok := debug.ReadBuildInfo()
-	if !ok {
-		// Metadata not available
-		return
-	}
-
-	version = info.Main.Version
-
-	for _, setting := range info.Settings {
-		switch setting.Key {
-		case "vcs.revision":
-			revision = setting.Value
-		case "vcs.time":
-			datetime = setting.Value
-		}
-	}
-
-	return
-}
-
 func CreateInvalidProductVersion() ProductVersion {
 	p := ProductVersion{
 		Version:    InvalidVersion,
@@ -186,15 +159,16 @@ func CreateInvalidProductVersion() ProductVersion {
 	return p
 }
 
-// GetPseudoVersionFromMetadata parses the go pseudo-version into a ProductVersion.
+// GetProductVersionFromMetadata parses the go pseudo-version into a ProductVersion.
 // A pseudo-version is a string in format "v[version]-[datetime]-[revision][dirtybit]".
 // For example: "v1.2.3-20260815131415-de3798c09c08+dirty".
-func GetPseudoVersionFromMetadata() ProductVersion {
+func GetProductVersionFromMetadata() ProductVersion {
 	p := CreateInvalidProductVersion()
 
-	version, revision, datetime := getVersionControlValuesFromMetadata()
-	if version == "" {
-		// Metadata not available
+	version := build.GetVersionFromMetadata()
+	revision, datetime := build.GetGitHashAndDateFromMetadata()
+	if version == "" || revision == "" || datetime == "" {
+		// Metadata not available or not compiled from git version control.
 		// Return an invalid ProductVersion
 		return p
 	}
@@ -204,8 +178,17 @@ func GetPseudoVersionFromMetadata() ProductVersion {
 	// For example, if you run your app using `go run .` or compile it locally without tags, Go sets info.Main.Version to the string "(devel)".
 	p.Version = version
 
-	// Truncate revision to 12 characters
-	p.CommitHash = revision[0:12]
+	// Remove `+dirty` from version and standardizes it
+	p.Version = semver.Canonical(p.Version)
+
+	// Strip the leading "v" to only get the digits and pre-release labels
+	p.Version = strings.TrimPrefix(p.Version, "v")
+
+	// Parse revision
+	if revision != "" {
+		// Truncate revision to 12 characters or less
+		p.CommitHash = revision[0:min(12, len(revision))]
+	}
 
 	// Parse datetime
 	{
@@ -220,12 +203,6 @@ func GetPseudoVersionFromMetadata() ProductVersion {
 			p.BuildDate = fmt.Sprintf("%d-%02d-%02d", year, month, day)
 		}
 	}
-
-	// Remove `+dirty` from version and standardizes it
-	p.Version = semver.Canonical(p.Version)
-
-	// Strip the leading "v" if you strictly want the digits and pre-release labels
-	p.Version = strings.TrimPrefix(p.Version, "v")
 
 	// Remove datetime from version string
 	{
@@ -284,41 +261,43 @@ func GetProductVersion() ProductVersion {
 	}
 
 	// Get a valid the product version from metadata
-	metadata := GetPseudoVersionFromMetadata()
+	metadata := GetProductVersionFromMetadata()
 	if metadata.IsValid() {
 		return metadata
 	}
 
-	// Return an invalid version.
-	return CreateInvalidProductVersion()
+	// Try to build a ProductVersion from the version metadata.
+	tagName := build.GetVersionFromMetadata()
+	if tagName != "" && tagName != "(devel)" {
+		// Strip the leading "v" to only get the digits and pre-release labels
+		tagName = strings.TrimPrefix(tagName, "v")
+
+		// This product version is still invalid because it has no CommitHash and no BuildDate.
+		// It will require a different formatting
+		p := CreateInvalidProductVersion()
+		p.Version = tagName
+		return p
+	}
+
+	// Build a ProductVersion from the VERSION file instead.
+	// This product version is still invalid because it has no CommitHash and no BuildDate.
+	// It will require a different formatting
+	p := CreateInvalidProductVersion()
+	p.Version = root.GetVersionFromVersionFile()
+	return p
 }
 
 func GetProductVersionString() string {
 	p := GetProductVersion()
 
-	msg := fmt.Sprintf("%s (%s) compiled on %s", p.Version, p.CommitHash, p.BuildDate)
-	return msg
-}
-
-func GetProductVersionVerboseString() string {
-	info, ok := debug.ReadBuildInfo()
-	if !ok {
-		// Can't do better
-		return ""
+	var msg string
+	if p.IsValid() {
+		// Version 0.3.1-rc1 (820b508a0f53, released 2026-08-18)
+		msg = fmt.Sprintf("%s (%s, released %s)", p.Version, p.CommitHash, p.BuildDate)
+	} else {
+		// Invalid product version. Assume only p.Version is valid.
+		msg = fmt.Sprintf("%s", p.Version)
 	}
-
-	// Add detailed version string
-	msg := fmt.Sprintf("%s\n", info.Main.Version)
-
-	// Serialize BuildSettings to json
-	jsonData, err := json.MarshalIndent(info.Settings, "", "  ")
-	if err != nil {
-		msg += fmt.Sprintf("error: %v\n", err)
-		return msg
-	}
-
-	// Add BuildSettings info to string
-	msg += fmt.Sprintf("%v\n", string(jsonData))
 
 	return msg
 }

@@ -8,6 +8,7 @@ import (
 	"strings"
 	"text/tabwriter"
 
+	"github.com/end2endzone/BedrockHelper/internal/build"
 	lib "github.com/end2endzone/BedrockHelper/minecraftbedrock"
 )
 
@@ -39,8 +40,8 @@ func printVersion(verbose bool) {
 	fmt.Fprintf(os.Stdout, "Version %s.\n", GetProductVersionString())
 
 	if verbose {
-		verboseVersion := GetProductVersionVerboseString()
-		fmt.Fprintf(os.Stdout, "%s", verboseVersion)
+		metadata := build.GetBuildMetadata()
+		fmt.Fprintf(os.Stdout, "Build metadata:%s\n", metadata)
 	}
 }
 
