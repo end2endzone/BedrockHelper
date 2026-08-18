@@ -13,5 +13,5 @@ func TestGetProductVersionStringContainsVERSIONFile(t *testing.T) {
 	versionFileContent := root.GetVersionFromVersionFile()
 
 	// Assert the string returned from GetProductVersionString() contains the actual VERSION string.
-	require.Contains(t, productVersion, versionFileContent, "GetProductVersionString() does not contains the VERSION. The VERSION file might be outdated.")
+	require.Contains(t, productVersion, versionFileContent, "GetProductVersionString() which is '%s' does not contains the VERSION which is '%s'. The VERSION file might be outdated.", productVersion, versionFileContent)
 }

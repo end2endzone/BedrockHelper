@@ -268,7 +268,7 @@ func GetProductVersion() ProductVersion {
 
 	// Try to build a ProductVersion from the version metadata.
 	tagName := build.GetVersionFromMetadata()
-	if tagName != "" {
+	if tagName != "" && tagName != "(devel)" {
 		// Strip the leading "v" to only get the digits and pre-release labels
 		tagName = strings.TrimPrefix(tagName, "v")
 
