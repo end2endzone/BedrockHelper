@@ -37,7 +37,13 @@ func (p Pack) Name() string {
 }
 
 func (p Pack) NameSanitized() string {
-	dirName := sanitizeCharactersInPath(p.Manifest.Header.Name)
+	name := p.Manifest.Header.Name
+
+	// Remove formatting such as "§6orange text§r"
+	name = RemoveFormattingInPackName(name)
+
+	// Make the content safe for filesystems
+	dirName := sanitizeCharactersInPath(name)
 
 	// Prevent empty names
 	if dirName == "" {
@@ -254,4 +260,23 @@ func FilterPacksByKind(packs []*Pack, kind PackKind) []*Pack {
 		}
 	}
 	return results
+}
+
+func RemoveFormattingInPackName(name string) string {
+	var b strings.Builder
+
+	// for each rune
+	skipNextRune := false
+	for _, r := range name {
+		if r == '§' {
+			skipNextRune = true
+		} else if skipNextRune {
+			skipNextRune = false
+		} else {
+			b.WriteRune(r)
+		}
+	}
+
+	result := b.String()
+	return result
 }
