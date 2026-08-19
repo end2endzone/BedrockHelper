@@ -6,8 +6,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"text/tabwriter"
 
+	tablib "github.com/agrison/go-tablib"
 	"github.com/end2endzone/BedrockHelper/internal/build"
 	lib "github.com/end2endzone/BedrockHelper/minecraftbedrock"
 )
@@ -43,6 +43,43 @@ func printVersion(verbose bool) {
 		metadata := build.GetBuildMetadata()
 		fmt.Fprintf(os.Stdout, "Build metadata:%s\n", metadata)
 	}
+}
+
+// printPacks prints packs information as an ASCII table
+// Uses library https://github.com/agrison/go-tablib for formatting.
+func printPacks(packs []*lib.Pack) {
+	// Define columns
+	dataset := tablib.NewDataset([]string{
+		"Name",
+		"Kind",
+		"Version",
+		"UUID",
+		"Path"})
+
+	// Append data rows
+	for _, p := range packs {
+		//dataset.Append([]interface{}{p.NameWithoutFormatting(), p.KindSafe(), p.Manifest.Header.Version, p.UUID()})
+		dataset.AppendValues(
+			p.NameWithoutFormatting(),
+			p.KindSafe().String(),
+			p.Manifest.Header.Version.String(),
+			p.UUID(),
+			p.Path)
+	}
+
+	// Export to terminal ASCII table
+	ascii := dataset.Tabular("condensed" /* tablib.TabularCondensed */)
+	/*if err != nil {
+		fmt.Fprintf(os.Stderr, "error: %v\n", err)
+	}*/
+
+	fmt.Println(ascii)
+
+	/*
+		// Export to CSV
+		csv, _ := dataset.CSV()
+		fmt.Println(csv)
+	*/
 }
 
 func reportArgumentParsingError(format string, args ...any) {
@@ -482,12 +519,8 @@ func cmdListAddons(serverLocation string) error {
 		return nil
 	}
 
-	w := tabwriter.NewWriter(os.Stdout, 0, 4, 2, ' ', 0)
-	fmt.Fprintln(w, "KIND\tNAME\tVERSION\tUUID")
-	for _, p := range packs {
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", p.KindSafe(), p.NameWithoutFormatting(), p.Manifest.Header.Version, p.Manifest.Header.UUID)
-	}
-	return w.Flush()
+	printPacks(packs)
+	return nil
 }
 
 // cmdResolveAddon search the target server for an add-on file that contains a pack matching <uuid>.
