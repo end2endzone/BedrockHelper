@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/magiconair/properties"
+	"github.com/tailscale/hujson"
 )
 
 type Pack struct {
@@ -216,6 +217,47 @@ func LoadPackFromZip(zipPath string, packDir string) (*Pack, error) {
 		Path:     packDir,
 		Manifest: manifest,
 	}
+
+	// Check for texts/languages.json
+	textsDir := ZipFilePathJoin(packDir, "texts")
+	languagesFilePath := ZipFilePathJoin(textsDir, "languages.json")
+
+	// Get tje manifest json RAW bytes
+	data, err = readZipEntry(zipPath, languagesFilePath)
+	if err != nil {
+		// stop parsing for more
+		return pack, nil
+	}
+
+	languages, _ := LoadLanguagesFromBytes(data)
+	pack.LanguageList = languages
+
+	// Load each language file properties
+	for _, langKey := range languages {
+		languagePropertiesFileName := fmt.Sprintf("%s.lang", langKey)
+		languagePropertiesFilePath := ZipFilePathJoin(textsDir, languagePropertiesFileName)
+
+		// Get the language file bytes
+		data, err = readZipEntry(zipPath, languagePropertiesFilePath)
+		if err != nil {
+			// On error skip language properties
+			continue
+		}
+
+		// Get the language properties
+		p, err := LoadLanguagePropertiesFromBytes(data)
+		if err != nil {
+			// On error skip language properties
+			continue
+		}
+
+		// Save these properties for this language
+		if pack.LanguageMap == nil {
+			pack.LanguageMap = make(map[string]*properties.Properties)
+		}
+		pack.LanguageMap[langKey] = p
+	}
+
 	return pack, nil
 }
 
@@ -393,6 +435,16 @@ func LoadLanguageProperties(path string) (*properties.Properties, error) {
 	return p, err
 }
 
+// LoadLanguagePropertiesFromBytes parses the raw JSON bytes of a language *.lang file file as a *properties.Properties.
+func LoadLanguagePropertiesFromBytes(data []byte) (*properties.Properties, error) {
+	p, err := properties.Load(data, properties.UTF8)
+	if err != nil {
+		return nil, err
+	}
+
+	return p, err
+}
+
 func LoadLanguages(filePath string) ([]string, error) {
 	bytes, err := os.ReadFile(filePath)
 	if err != nil {
@@ -406,4 +458,18 @@ func LoadLanguages(filePath string) ([]string, error) {
 	}
 
 	return languages, nil
+}
+
+// LoadLanguagesFromBytes parses the raw JSON bytes of a languages.json file as an []string structure.
+func LoadLanguagesFromBytes(data []byte) ([]string, error) {
+	var output []string
+
+	// Filter out comments in json since comments are not supported by standard json Go library.
+	standardizedJsonBytes, err := hujson.Standardize(data)
+
+	err = json.Unmarshal(standardizedJsonBytes, &output)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse languages.json: %w", err)
+	}
+	return output, nil
 }
