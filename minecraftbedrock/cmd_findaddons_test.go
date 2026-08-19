@@ -21,6 +21,7 @@ func TestFindAddonsInDir_NonRecursive(t *testing.T) {
 	want := []string{
 		"behavior_only.mcpack",
 		"foobar.mcaddon",
+		"localized.mcpack",
 		"solo.mcpack",
 		"zip_with_no_manifest.zip", // is a valid zip (without a manifest) so it counts as a discoverable add-on file
 	}
@@ -40,9 +41,10 @@ func TestFindAddonsInDir_Recursive(t *testing.T) {
 	sort.Strings(names)
 
 	want := []string{
-		"foobar.mcaddon",
-		"solo.mcpack",
 		"behavior_only.mcpack",
+		"foobar.mcaddon",
+		"localized.mcpack",
+		"solo.mcpack",
 		"zip_with_no_manifest.zip"}
 	sort.Strings(want)
 
