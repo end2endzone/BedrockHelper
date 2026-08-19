@@ -1,17 +1,23 @@
 package minecraftbedrock
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/fs"
 	"math/rand/v2"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/magiconair/properties"
+	"github.com/tailscale/hujson"
 )
 
 type Pack struct {
-	Path     string
-	Manifest *AddonManifest
+	Path         string
+	Manifest     *AddonManifest
+	LanguageList []string
+	LanguageMap  map[string]*properties.Properties
 }
 
 func (p Pack) Kind() (PackKind, error) {
@@ -33,11 +39,33 @@ func (p Pack) KindSafe() PackKind {
 }
 
 func (p Pack) Name() string {
-	return p.Manifest.Header.Name
+	name := p.Manifest.Header.Name
+
+	// Check if the pack don't have localisation properties
+	if !p.HasLanguages() {
+		return name
+	}
+
+	// Resolve the localized name
+	nameKey := name
+
+	defaultLangKey := p.GetFirstLocalizedLanguage()
+	localizedName, exists := p.GetLocalizedTextValue(defaultLangKey, nameKey)
+	if !exists {
+		return name
+	}
+
+	return localizedName
+}
+
+func (p Pack) NameWithoutFormatting() string {
+	name := p.Name()
+	name = RemoveFormattingInPackName(name)
+	return name
 }
 
 func (p Pack) NameSanitized() string {
-	name := p.Manifest.Header.Name
+	name := p.Name()
 
 	// Remove formatting such as "§6orange text§r"
 	name = RemoveFormattingInPackName(name)
@@ -65,8 +93,60 @@ func (p Pack) Description() string {
 		safeKind = UnknownPack
 	}
 
-	desc := fmt.Sprintf("%s version %s (%s) uuid=%s", p.Name(), p.Manifest.Header.Version, safeKind, p.Manifest.Header.UUID)
+	desc := fmt.Sprintf("%s version %s (%s) uuid=%s", p.NameWithoutFormatting(), p.Manifest.Header.Version, safeKind, p.Manifest.Header.UUID)
 	return desc
+}
+
+func (p Pack) HasLanguages() bool {
+	if len(p.LanguageList) == 0 || len(p.LanguageMap) == 0 {
+		return false
+	}
+
+	langKey := p.GetFirstLocalizedLanguage()
+	if langKey == "" {
+		return false
+	}
+
+	// Check if language has a property file loaded
+	/*value*/
+	_, exists := p.LanguageMap[langKey]
+	if !exists {
+		return false
+	}
+
+	return true
+}
+
+func (p Pack) GetFirstLocalizedLanguage() string {
+	if p.LanguageList == nil || len(p.LanguageList) == 0 {
+		return ""
+	}
+	langKey := p.LanguageList[0]
+	return langKey
+}
+
+func (p Pack) GetLocalizedTextValue(langKey, textKey string) (value string, exists bool) {
+	if p.LanguageList == nil || p.LanguageMap == nil {
+		return "", false
+	}
+
+	exists = false
+
+	// Get the language's properties
+	props, langExists := p.LanguageMap[langKey]
+	if !langExists {
+		return
+	}
+
+	// Get the language's localized text
+	propsMap := props.Map()
+	text, exists := propsMap[textKey]
+	return text, exists
+}
+
+func (p Pack) GetDefaultLocalizedTextValue(textKey string) (value string, exists bool) {
+	first := p.GetFirstLocalizedLanguage()
+	return p.GetLocalizedTextValue(first, textKey)
 }
 
 // LoadPackFromDirectory loads a pack stored in the given directory.
@@ -81,11 +161,35 @@ func LoadPackFromDirectory(path string) (*Pack, error) {
 		return nil, fmt.Errorf("failed to read a pack from directory %q: %v", path, err)
 	}
 
+	// Check for texts/languages.json
+	textsDir := filepath.Join(path, "texts")
+	languagesFilePath := filepath.Join(textsDir, "languages.json")
+	languages, _ := LoadLanguages(languagesFilePath)
+
 	// Create the pack
 	pack := &Pack{
-		Path:     path,
-		Manifest: manifest,
+		Path:         path,
+		Manifest:     manifest,
+		LanguageList: languages,
 	}
+
+	// Load each language file properties
+	for _, langKey := range languages {
+		languagePropertiesFileName := fmt.Sprintf("%s.lang", langKey)
+		languagePropertiesFilePath := filepath.Join(textsDir, languagePropertiesFileName)
+		p, err := LoadLanguageProperties(languagePropertiesFilePath)
+		if err != nil {
+			// On error skip language properties
+			continue
+		}
+
+		// Save these properties for this language
+		if pack.LanguageMap == nil {
+			pack.LanguageMap = make(map[string]*properties.Properties)
+		}
+		pack.LanguageMap[langKey] = p
+	}
+
 	return pack, nil
 }
 
@@ -113,6 +217,47 @@ func LoadPackFromZip(zipPath string, packDir string) (*Pack, error) {
 		Path:     packDir,
 		Manifest: manifest,
 	}
+
+	// Check for texts/languages.json
+	textsDir := ZipFilePathJoin(packDir, "texts")
+	languagesFilePath := ZipFilePathJoin(textsDir, "languages.json")
+
+	// Get tje manifest json RAW bytes
+	data, err = readZipEntry(zipPath, languagesFilePath)
+	if err != nil {
+		// stop parsing for more
+		return pack, nil
+	}
+
+	languages, _ := LoadLanguagesFromBytes(data)
+	pack.LanguageList = languages
+
+	// Load each language file properties
+	for _, langKey := range languages {
+		languagePropertiesFileName := fmt.Sprintf("%s.lang", langKey)
+		languagePropertiesFilePath := ZipFilePathJoin(textsDir, languagePropertiesFileName)
+
+		// Get the language file bytes
+		data, err = readZipEntry(zipPath, languagePropertiesFilePath)
+		if err != nil {
+			// On error skip language properties
+			continue
+		}
+
+		// Get the language properties
+		p, err := LoadLanguagePropertiesFromBytes(data)
+		if err != nil {
+			// On error skip language properties
+			continue
+		}
+
+		// Save these properties for this language
+		if pack.LanguageMap == nil {
+			pack.LanguageMap = make(map[string]*properties.Properties)
+		}
+		pack.LanguageMap[langKey] = p
+	}
+
 	return pack, nil
 }
 
@@ -279,4 +424,52 @@ func RemoveFormattingInPackName(name string) string {
 
 	result := b.String()
 	return result
+}
+
+func LoadLanguageProperties(path string) (*properties.Properties, error) {
+	p, err := properties.LoadFile(path, properties.UTF8)
+	if err != nil {
+		return nil, err
+	}
+
+	return p, err
+}
+
+// LoadLanguagePropertiesFromBytes parses the raw JSON bytes of a language *.lang file file as a *properties.Properties.
+func LoadLanguagePropertiesFromBytes(data []byte) (*properties.Properties, error) {
+	p, err := properties.Load(data, properties.UTF8)
+	if err != nil {
+		return nil, err
+	}
+
+	return p, err
+}
+
+func LoadLanguages(filePath string) ([]string, error) {
+	bytes, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, err
+	}
+
+	var languages []string
+	err = json.Unmarshal(bytes, &languages)
+	if err != nil {
+		return nil, err
+	}
+
+	return languages, nil
+}
+
+// LoadLanguagesFromBytes parses the raw JSON bytes of a languages.json file as an []string structure.
+func LoadLanguagesFromBytes(data []byte) ([]string, error) {
+	var output []string
+
+	// Filter out comments in json since comments are not supported by standard json Go library.
+	standardizedJsonBytes, err := hujson.Standardize(data)
+
+	err = json.Unmarshal(standardizedJsonBytes, &output)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse languages.json: %w", err)
+	}
+	return output, nil
 }
