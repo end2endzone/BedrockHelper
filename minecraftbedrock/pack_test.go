@@ -307,3 +307,52 @@ func TestRemoveFormattingInPackName(t *testing.T) {
 		require.Equal(t, tc.expected, actual)
 	}
 }
+
+func TestGetLocalizedTextValue(t *testing.T) {
+	t.Run("localized.mcpack", func(t *testing.T) {
+		pack := loadPackFixture(t, "localized.mcpack")
+		require.NotNil(t, pack)
+
+		require.True(t, pack.HasLanguages())
+
+		actualFirstLocalizedLanguage := pack.GetFirstLocalizedLanguage()
+		require.Equal(t, "en_US", actualFirstLocalizedLanguage)
+
+		frenchName, exists := pack.GetLocalizedTextValue("fr_FR", "pack.name")
+		require.True(t, exists)
+		require.Equal(t, "§6Localisé§r", frenchName)
+
+		russianName, exists := pack.GetLocalizedTextValue("ru_RU", "pack.name")
+		require.True(t, exists)
+		require.Equal(t, "§6Локализация§r", russianName)
+	})
+
+	t.Run("behavior_only.mcpack", func(t *testing.T) {
+		pack := loadPackFixture(t, "behavior_only.mcpack")
+		require.NotNil(t, pack)
+
+		require.False(t, pack.HasLanguages())
+
+		actualFirstLocalizedLanguage := pack.GetFirstLocalizedLanguage()
+		require.Equal(t, "", actualFirstLocalizedLanguage)
+
+		frenchName, exists := pack.GetLocalizedTextValue("fr_FR", "pack.name")
+		require.False(t, exists)
+		require.Equal(t, "", frenchName)
+
+		russianName, exists := pack.GetLocalizedTextValue("ru_RU", "pack.name")
+		require.False(t, exists)
+		require.Equal(t, "", russianName)
+	})
+}
+
+func TestPackLocalizedName(t *testing.T) {
+	pack := loadPackFixture(t, "localized.mcpack")
+	require.NotNil(t, pack)
+
+	name := pack.Name()
+	require.Equal(t, "§6Localized§r", name)
+
+	nameSanitized := pack.NameSanitized()
+	require.Equal(t, "Localized", nameSanitized)
+}

@@ -1,17 +1,22 @@
 package minecraftbedrock
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/fs"
 	"math/rand/v2"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/magiconair/properties"
 )
 
 type Pack struct {
-	Path     string
-	Manifest *AddonManifest
+	Path         string
+	Manifest     *AddonManifest
+	LanguageList []string
+	LanguageMap  map[string]*properties.Properties
 }
 
 func (p Pack) Kind() (PackKind, error) {
@@ -33,11 +38,27 @@ func (p Pack) KindSafe() PackKind {
 }
 
 func (p Pack) Name() string {
-	return p.Manifest.Header.Name
+	name := p.Manifest.Header.Name
+
+	// Check if the pack don't have localisation properties
+	if !p.HasLanguages() {
+		return name
+	}
+
+	// Resolve the localized name
+	nameKey := name
+
+	defaultLangKey := p.GetFirstLocalizedLanguage()
+	localizedName, exists := p.GetLocalizedTextValue(defaultLangKey, nameKey)
+	if !exists {
+		return name
+	}
+
+	return localizedName
 }
 
 func (p Pack) NameSanitized() string {
-	name := p.Manifest.Header.Name
+	name := p.Name()
 
 	// Remove formatting such as "§6orange text§r"
 	name = RemoveFormattingInPackName(name)
@@ -69,6 +90,58 @@ func (p Pack) Description() string {
 	return desc
 }
 
+func (p Pack) HasLanguages() bool {
+	if len(p.LanguageList) == 0 || len(p.LanguageMap) == 0 {
+		return false
+	}
+
+	langKey := p.GetFirstLocalizedLanguage()
+	if langKey == "" {
+		return false
+	}
+
+	// Check if language has a property file loaded
+	/*value*/
+	_, exists := p.LanguageMap[langKey]
+	if !exists {
+		return false
+	}
+
+	return true
+}
+
+func (p Pack) GetFirstLocalizedLanguage() string {
+	if p.LanguageList == nil || len(p.LanguageList) == 0 {
+		return ""
+	}
+	langKey := p.LanguageList[0]
+	return langKey
+}
+
+func (p Pack) GetLocalizedTextValue(langKey, textKey string) (value string, exists bool) {
+	if p.LanguageList == nil || p.LanguageMap == nil {
+		return "", false
+	}
+
+	exists = false
+
+	// Get the language's properties
+	props, langExists := p.LanguageMap[langKey]
+	if !langExists {
+		return
+	}
+
+	// Get the language's localized text
+	propsMap := props.Map()
+	text, exists := propsMap[textKey]
+	return text, exists
+}
+
+func (p Pack) GetDefaultLocalizedTextValue(textKey string) (value string, exists bool) {
+	first := p.GetFirstLocalizedLanguage()
+	return p.GetLocalizedTextValue(first, textKey)
+}
+
 // LoadPackFromDirectory loads a pack stored in the given directory.
 // The given directory path must contains a manifest.json file to be a valid pack.
 // Returns a valid pack or an error otherwise.
@@ -81,11 +154,35 @@ func LoadPackFromDirectory(path string) (*Pack, error) {
 		return nil, fmt.Errorf("failed to read a pack from directory %q: %v", path, err)
 	}
 
+	// Check for texts/languages.json
+	textsDir := filepath.Join(path, "texts")
+	languagesFilePath := filepath.Join(textsDir, "languages.json")
+	languages, _ := LoadLanguages(languagesFilePath)
+
 	// Create the pack
 	pack := &Pack{
-		Path:     path,
-		Manifest: manifest,
+		Path:         path,
+		Manifest:     manifest,
+		LanguageList: languages,
 	}
+
+	// Load each language file properties
+	for _, langKey := range languages {
+		languagePropertiesFileName := fmt.Sprintf("%s.lang", langKey)
+		languagePropertiesFilePath := filepath.Join(textsDir, languagePropertiesFileName)
+		p, err := LoadLanguageProperties(languagePropertiesFilePath)
+		if err != nil {
+			// On error skip language properties
+			continue
+		}
+
+		// Save these properties for this language
+		if pack.LanguageMap == nil {
+			pack.LanguageMap = make(map[string]*properties.Properties)
+		}
+		pack.LanguageMap[langKey] = p
+	}
+
 	return pack, nil
 }
 
@@ -279,4 +376,28 @@ func RemoveFormattingInPackName(name string) string {
 
 	result := b.String()
 	return result
+}
+
+func LoadLanguageProperties(path string) (*properties.Properties, error) {
+	p, err := properties.LoadFile(path, properties.UTF8)
+	if err != nil {
+		return nil, err
+	}
+
+	return p, err
+}
+
+func LoadLanguages(filePath string) ([]string, error) {
+	bytes, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, err
+	}
+
+	var languages []string
+	err = json.Unmarshal(bytes, &languages)
+	if err != nil {
+		return nil, err
+	}
+
+	return languages, nil
 }
