@@ -88,12 +88,7 @@ func (p Pack) UUID() string {
 }
 
 func (p Pack) Description() string {
-	safeKind, err := p.Kind()
-	if err != nil {
-		safeKind = UnknownPack
-	}
-
-	desc := fmt.Sprintf("%s version %s (%s) uuid=%s", p.NameWithoutFormatting(), p.Manifest.Header.Version, safeKind, p.Manifest.Header.UUID)
+	desc := fmt.Sprintf("%s, %s, version %s, uuid %s", p.NameWithoutFormatting(), p.KindSafe().String(), p.Manifest.Header.Version, p.Manifest.Header.UUID)
 	return desc
 }
 
