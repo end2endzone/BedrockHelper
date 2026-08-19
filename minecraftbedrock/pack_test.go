@@ -286,3 +286,24 @@ func TestFilterPacksByKind(t *testing.T) {
 	require.Len(t, resourceOnly, 1)
 	require.Equal(t, pack2.Name(), resourceOnly[0].Name())
 }
+
+func TestRemoveFormattingInPackName(t *testing.T) {
+	cases := []struct {
+		fancyName string
+		expected  string
+	}{
+		{"§6orange text§r", "orange text"},
+		{"§bblue text§r", "blue text"},
+		{"normal name", "normal name"},
+		{"random normal text §7grey text§5purple text§r", "random normal text grey textpurple text"},
+		{"normal §cred text§fwhite text", "normal red textwhite text"},
+		{"§l§7grey text §rfooter", "grey text footer"},
+	}
+
+	for _, tc := range cases {
+		actual := RemoveFormattingInPackName(tc.fancyName)
+
+		// Assert
+		require.Equal(t, tc.expected, actual)
+	}
+}
