@@ -473,3 +473,25 @@ func LoadLanguagesFromBytes(data []byte) ([]string, error) {
 	}
 	return output, nil
 }
+
+// GetPacksLongestCommonPathPrefix finds the longest path prefix shared by all packs in the given slice.
+func GetPacksLongestCommonPathPrefix(packs []*Pack) string {
+	if len(packs) == 0 {
+		return ""
+	}
+
+	// Start with the first string as the potential longest prefix
+	prefix := packs[0].Path
+
+	for i := 1; i < len(packs); i++ {
+		// Reduce prefix until it matches the start of strs[i]
+		for !strings.HasPrefix(packs[i].Path, prefix) {
+			prefix = prefix[:len(prefix)-1]
+			if prefix == "" {
+				return ""
+			}
+		}
+	}
+
+	return prefix
+}
