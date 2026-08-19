@@ -57,6 +57,12 @@ func (p Pack) Name() string {
 	return localizedName
 }
 
+func (p Pack) NameWithoutFormatting() string {
+	name := p.Name()
+	name = RemoveFormattingInPackName(name)
+	return name
+}
+
 func (p Pack) NameSanitized() string {
 	name := p.Name()
 
@@ -86,7 +92,7 @@ func (p Pack) Description() string {
 		safeKind = UnknownPack
 	}
 
-	desc := fmt.Sprintf("%s version %s (%s) uuid=%s", p.Name(), p.Manifest.Header.Version, safeKind, p.Manifest.Header.UUID)
+	desc := fmt.Sprintf("%s version %s (%s) uuid=%s", p.NameWithoutFormatting(), p.Manifest.Header.Version, safeKind, p.Manifest.Header.UUID)
 	return desc
 }
 

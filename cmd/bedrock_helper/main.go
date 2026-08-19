@@ -485,7 +485,7 @@ func cmdListAddons(serverLocation string) error {
 	w := tabwriter.NewWriter(os.Stdout, 0, 4, 2, ' ', 0)
 	fmt.Fprintln(w, "KIND\tNAME\tVERSION\tUUID")
 	for _, p := range packs {
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", p.KindSafe(), p.Name(), p.Manifest.Header.Version, p.Manifest.Header.UUID)
+		fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", p.KindSafe(), p.NameWithoutFormatting(), p.Manifest.Header.Version, p.Manifest.Header.UUID)
 	}
 	return w.Flush()
 }
