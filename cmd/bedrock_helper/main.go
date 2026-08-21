@@ -449,6 +449,8 @@ func cmdInstall(addonPath string, serverLocation string, verbose bool) error {
 		return err
 	}
 
+	lib.SortPacksByNames(installedPacks)
+
 	// print report
 	printCommandReport(lib.Install, installedPacks, serverLocation, verbose)
 
@@ -484,6 +486,8 @@ func cmdUninstall(arg string, serverLocation string, verbose bool) error {
 	if err != nil {
 		return err
 	}
+
+	lib.SortPacksByNames(uninstalledPacks)
 
 	// print report
 	printCommandReport(lib.Uninstall, uninstalledPacks, serverLocation, verbose)
@@ -533,6 +537,8 @@ func cmdFindAddons(findAddons string, verbose bool) error {
 				continue
 			}
 
+			lib.SortPacksByNames(packs)
+
 			// List packs of this addon
 			for _, pack := range packs {
 				desc := pack.Description()
@@ -554,6 +560,8 @@ func cmdListAddons(serverLocation string) error {
 		fmt.Println("No add-ons are registered for this server.")
 		return nil
 	}
+
+	lib.SortPacksByNames(packs)
 
 	printPacks(packs)
 	return nil
@@ -598,6 +606,8 @@ func cmdInstallAll(serverLocation string, verbose bool) error {
 		installedPacks = append(installedPacks, latestInstalledPacks...)
 	}
 
+	lib.SortPacksByNames(installedPacks)
+
 	// print report
 	printCommandReport(lib.Install, installedPacks, serverLocation, verbose)
 
@@ -628,6 +638,8 @@ func cmdUninstallAll(serverLocation string, verbose bool) error {
 		// Append latest uninstallation to total uninstallation list
 		uninstalledPacks = append(uninstalledPacks, latestUninstalledPacks...)
 	}
+
+	lib.SortPacksByNames(uninstalledPacks)
 
 	// print report
 	printCommandReport(lib.Uninstall, uninstalledPacks, serverLocation, verbose)
