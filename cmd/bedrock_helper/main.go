@@ -6,8 +6,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"text/tabwriter"
 
+	tablib "github.com/agrison/go-tablib"
 	"github.com/end2endzone/BedrockHelper/internal/build"
 	lib "github.com/end2endzone/BedrockHelper/minecraftbedrock"
 )
@@ -42,6 +42,79 @@ func printVersion(verbose bool) {
 	if verbose {
 		metadata := build.GetBuildMetadata()
 		fmt.Fprintf(os.Stdout, "Build metadata:%s\n", metadata)
+	}
+}
+
+// printPacks prints packs information as an ASCII table
+// Uses library https://github.com/agrison/go-tablib for formatting.
+func printPacks(packs []*lib.Pack) {
+	fmt.Println()
+
+	// Can we shorten the length of the Path column ?
+	longestPathPrefix := lib.GetPacksLongestCommonPathPrefix(packs)
+
+	// Define columns
+	pathColumnName := "Path"
+	if longestPathPrefix != "" {
+		pathColumnName = "Relative Path"
+	}
+	dataset := tablib.NewDataset([]string{
+		"Name",
+		"Kind",
+		"Version",
+		"UUID",
+		pathColumnName})
+
+	// Append data rows
+	for _, p := range packs {
+		// Truncate the path, if nessesary
+		truncatedPath := p.Path
+		if longestPathPrefix != "" {
+			truncatedPath = strings.Replace(truncatedPath, longestPathPrefix, "", 1)
+		}
+
+		// Add pack as a new row in the dataset
+		dataset.AppendValues(
+			p.NameWithoutFormatting(),
+			p.KindSafe().String(),
+			p.Manifest.Header.Version.String(),
+			p.UUID(),
+			truncatedPath)
+	}
+
+	// Export to terminal ASCII table
+	ascii := dataset.Tabular("condensed" /* tablib.TabularCondensed */)
+	/*if err != nil {
+		fmt.Fprintf(os.Stderr, "error: %v\n", err)
+	}*/
+
+	fmt.Println(ascii)
+
+	/*
+		// Export to CSV
+		csv, _ := dataset.CSV()
+		fmt.Println(csv)
+	*/
+
+	// Print relative directory value
+	if longestPathPrefix != "" {
+		longestPathPrefix = strings.TrimRight(longestPathPrefix, "\\") // remove potential trailing `\` character
+		fmt.Printf("Packs relative directory: %s\n", longestPathPrefix)
+	}
+
+}
+
+func printCommandReport(command lib.Command, packs []*lib.Pack, serverLocation string, verbose bool) {
+	fmt.Printf("%sed the following packs:\n", command.String())
+
+	if !verbose {
+		for _, p := range packs {
+			fmt.Printf("  - %s\n", p.Description())
+		}
+
+		fmt.Printf("in server %v\n", serverLocation)
+	} else {
+		printPacks(packs)
 	}
 }
 
@@ -171,13 +244,13 @@ func printUsage(fs *flag.FlagSet) {
 
 	// Print static usage header
 	const usageText = `Usage:
-    bedrock_helper --install <path> [--server-location <dir>] [--no-header]
-    bedrock_helper --uninstall <path-or-uuid> [--server-location <dir>] [--no-header]
+    bedrock_helper --install <path> [--server-location <dir>] [--no-header] [--verbose]
+    bedrock_helper --uninstall <path-or-uuid> [--server-location <dir>] [--no-header] [--verbose]
     bedrock_helper --find-addons <path> [--no-header] [--verbose]
     bedrock_helper --list-addons [--server-location <dir>] [--no-header]
     bedrock_helper --resolve-pack <uuid> [--server-location <dir>] [--no-header]
-    bedrock_helper --install-all [--server-location <dir>] [--no-header]
-    bedrock_helper --uninstall-all [--server-location <dir>] [--no-header]
+    bedrock_helper --install-all [--server-location <dir>] [--no-header] [--verbose]
+    bedrock_helper --uninstall-all [--server-location <dir>] [--no-header] [--verbose]
     bedrock_helper --version [--verbose]
     bedrock_helper --help
 	`
@@ -346,9 +419,9 @@ func run(args []string) int {
 	// Call the actual command helpers
 	switch {
 	case cfg.Install != "":
-		err = cmdInstall(cfg.Install, cfg.ServerLocation)
+		err = cmdInstall(cfg.Install, cfg.ServerLocation, cfg.Verbose)
 	case cfg.Uninstall != "":
-		err = cmdUninstall(cfg.Uninstall, cfg.ServerLocation)
+		err = cmdUninstall(cfg.Uninstall, cfg.ServerLocation, cfg.Verbose)
 	case cfg.FindAddons != "":
 		err = cmdFindAddons(cfg.FindAddons, cfg.Verbose)
 	case cfg.ListAddons:
@@ -356,9 +429,9 @@ func run(args []string) int {
 	case cfg.ResolvePack != "":
 		err = cmdResolveAddon(cfg.ResolvePack, cfg.ServerLocation)
 	case cfg.InstallAll:
-		err = cmdInstallAll(cfg.ServerLocation)
+		err = cmdInstallAll(cfg.ServerLocation, cfg.Verbose)
 	case cfg.UninstallAll:
-		err = cmdUninstallAll(cfg.ServerLocation)
+		err = cmdUninstallAll(cfg.ServerLocation, cfg.Verbose)
 	}
 
 	// Check for an error while running a command.
@@ -369,23 +442,17 @@ func run(args []string) int {
 	return 0
 }
 
-func printCommandReport(command lib.Command, packs []*lib.Pack, serverLocation string) {
-	fmt.Printf("%sed the following packs:\n", command.String())
-	for _, p := range packs {
-		fmt.Printf("  - %s\n", p.Description())
-	}
-	fmt.Printf("in server %v\n", serverLocation)
-}
-
 // cmdInstall installs the .mcaddon/.mcpack/.zip add-on at <serverLocation>.
-func cmdInstall(addonPath string, serverLocation string) error {
+func cmdInstall(addonPath string, serverLocation string, verbose bool) error {
 	installedPacks, err := lib.InstallAddonInServer(addonPath, serverLocation)
 	if err != nil {
 		return err
 	}
 
+	lib.SortPacksByNames(installedPacks)
+
 	// print report
-	printCommandReport(lib.Install, installedPacks, serverLocation)
+	printCommandReport(lib.Install, installedPacks, serverLocation, verbose)
 
 	return nil
 }
@@ -414,14 +481,16 @@ func processUninstall(arg string, serverLocation string) ([]*lib.Pack, error) {
 	return []*lib.Pack{pack}, nil
 }
 
-func cmdUninstall(arg string, serverLocation string) error {
+func cmdUninstall(arg string, serverLocation string, verbose bool) error {
 	uninstalledPacks, err := processUninstall(arg, serverLocation)
 	if err != nil {
 		return err
 	}
 
+	lib.SortPacksByNames(uninstalledPacks)
+
 	// print report
-	printCommandReport(lib.Uninstall, uninstalledPacks, serverLocation)
+	printCommandReport(lib.Uninstall, uninstalledPacks, serverLocation, verbose)
 
 	return nil
 }
@@ -438,32 +507,42 @@ func cmdFindAddons(findAddons string, verbose bool) error {
 		return nil
 	}
 
+	// Define a common prefix for all paths that we will print
+	commonPrefix := filepath.Clean(findAddons) + string(filepath.Separator)
+
 	// List hist
 	fmt.Println("Found the following addons files:")
 	for _, addonPath := range addons {
+		// Truncate all file paths based on the original given directory
+		truncatedPath := addonPath
+		truncatedPath = strings.Replace(truncatedPath, commonPrefix, "", 1)
+
 		if !verbose {
-			fmt.Printf("  * %v\n", addonPath)
+			fmt.Printf("  * %v\n", truncatedPath)
 		} else {
 			// Verbose output.
-			fmt.Printf("  * %v\n", addonPath)
+			fmt.Printf("  * %v\n", truncatedPath)
+
+			// Make sure the error from os.Stderr shows under the right os.Stdout.
+			// Forces both descriptors to flush immediately.
+			os.Stdout.Sync()
+			os.Stderr.Sync()
 
 			// Also list UUID for each match
 			packs, err := lib.LoadPacksFromZip(addonPath)
 			if err != nil {
-				// Make sure the error from os.Stderr shows under the right os.Stdout.
-				// Forces both descriptors to flush immediately.
-				os.Stdout.Sync()
-				os.Stderr.Sync()
 
 				// on error, print the error but continue listing packs for other packs found
-				fmt.Fprintf(os.Stderr, "      error listing packs: %v\n", err)
+				fmt.Fprintf(os.Stderr, "          error listing packs: %v\n", err)
 				continue
 			}
+
+			lib.SortPacksByNames(packs)
 
 			// List packs of this addon
 			for _, pack := range packs {
 				desc := pack.Description()
-				fmt.Printf("      * %v\n", desc)
+				fmt.Printf("          * %v\n", desc)
 			}
 		}
 	}
@@ -482,12 +561,10 @@ func cmdListAddons(serverLocation string) error {
 		return nil
 	}
 
-	w := tabwriter.NewWriter(os.Stdout, 0, 4, 2, ' ', 0)
-	fmt.Fprintln(w, "KIND\tNAME\tVERSION\tUUID")
-	for _, p := range packs {
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", p.KindSafe(), p.NameWithoutFormatting(), p.Manifest.Header.Version, p.Manifest.Header.UUID)
-	}
-	return w.Flush()
+	lib.SortPacksByNames(packs)
+
+	printPacks(packs)
+	return nil
 }
 
 // cmdResolveAddon search the target server for an add-on file that contains a pack matching <uuid>.
@@ -504,7 +581,7 @@ func cmdResolveAddon(uuid, serverLocation string) error {
 }
 
 // cmdInstallAll scan the target server directory for add-on files and install every one that is found.
-func cmdInstallAll(serverLocation string) error {
+func cmdInstallAll(serverLocation string, verbose bool) error {
 	addons, err := lib.FindAddonsInDir(serverLocation, true)
 	if err != nil {
 		return err
@@ -529,13 +606,15 @@ func cmdInstallAll(serverLocation string) error {
 		installedPacks = append(installedPacks, latestInstalledPacks...)
 	}
 
+	lib.SortPacksByNames(installedPacks)
+
 	// print report
-	printCommandReport(lib.Install, installedPacks, serverLocation)
+	printCommandReport(lib.Install, installedPacks, serverLocation, verbose)
 
 	return nil
 }
 
-func cmdUninstallAll(serverLocation string) error {
+func cmdUninstallAll(serverLocation string, verbose bool) error {
 	addons, err := lib.FindAddonsInDir(serverLocation, true)
 	if err != nil {
 		return err
@@ -560,8 +639,10 @@ func cmdUninstallAll(serverLocation string) error {
 		uninstalledPacks = append(uninstalledPacks, latestUninstalledPacks...)
 	}
 
+	lib.SortPacksByNames(uninstalledPacks)
+
 	// print report
-	printCommandReport(lib.Uninstall, uninstalledPacks, serverLocation)
+	printCommandReport(lib.Uninstall, uninstalledPacks, serverLocation, verbose)
 
 	return nil
 }

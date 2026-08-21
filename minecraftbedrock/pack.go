@@ -7,6 +7,7 @@ import (
 	"math/rand/v2"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/magiconair/properties"
@@ -88,12 +89,7 @@ func (p Pack) UUID() string {
 }
 
 func (p Pack) Description() string {
-	safeKind, err := p.Kind()
-	if err != nil {
-		safeKind = UnknownPack
-	}
-
-	desc := fmt.Sprintf("%s version %s (%s) uuid=%s", p.NameWithoutFormatting(), p.Manifest.Header.Version, safeKind, p.Manifest.Header.UUID)
+	desc := fmt.Sprintf("%s, %s, version %s, uuid %s", p.NameWithoutFormatting(), p.KindSafe().String(), p.Manifest.Header.Version, p.Manifest.Header.UUID)
 	return desc
 }
 
@@ -472,4 +468,60 @@ func LoadLanguagesFromBytes(data []byte) ([]string, error) {
 		return nil, fmt.Errorf("failed to parse languages.json: %w", err)
 	}
 	return output, nil
+}
+
+// GetPacksLongestCommonPathPrefix finds the longest path prefix shared by all packs in the given slice.
+func GetPacksLongestCommonPathPrefix(packs []*Pack) string {
+	if len(packs) == 0 {
+		return ""
+	}
+
+	// Start with the first string as the potential longest prefix
+	prefix := packs[0].Path
+
+	for i := 1; i < len(packs); i++ {
+		// Reduce prefix until it matches the start of strs[i]
+		for !strings.HasPrefix(packs[i].Path, prefix) {
+			prefix = prefix[:len(prefix)-1]
+			if prefix == "" {
+				return ""
+			}
+		}
+	}
+
+	return prefix
+}
+
+// SortPacksByNames orders a pack slice by name then by kind.
+func SortPacksByNames(packs []*Pack) {
+	sort.Slice(packs, func(i, j int) bool {
+		// First, compare by name
+		name1 := packs[i].Name()
+		name2 := packs[j].Name()
+		if name1 != name2 {
+			return name1 < name2
+		}
+
+		// Then, compare by Kind
+		kind1 := packs[i].KindSafe()
+		kind2 := packs[j].KindSafe()
+		return kind1 < kind2
+	})
+}
+
+// SortPacksByKind orders a pack slice by kind then by name.
+func SortPacksByKind(packs []*Pack) {
+	sort.Slice(packs, func(i, j int) bool {
+		// First, compare by kind
+		kind1 := packs[i].KindSafe()
+		kind2 := packs[j].KindSafe()
+		if kind1 != kind2 {
+			return kind1 < kind2
+		}
+
+		// Then, compare by name
+		name1 := packs[i].Name()
+		name2 := packs[j].Name()
+		return name1 < name2
+	})
 }
