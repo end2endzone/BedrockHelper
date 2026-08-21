@@ -111,11 +111,11 @@ func printCommandReport(command lib.Command, packs []*lib.Pack, serverLocation s
 		for _, p := range packs {
 			fmt.Printf("  - %s\n", p.Description())
 		}
+
+		fmt.Printf("in server %v\n", serverLocation)
 	} else {
 		printPacks(packs)
 	}
-
-	fmt.Printf("in server %v\n", serverLocation)
 }
 
 func reportArgumentParsingError(format string, args ...any) {
