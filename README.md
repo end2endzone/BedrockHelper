@@ -77,7 +77,7 @@ You can also install with a command such as the following:
 CPUARCH=$(case "$(uname -m)" in x86_64) echo "amd64";; aarch64) echo "arm64";; *) uname -m;; esac)
 OSTYPE=$(uname -s | tr '[:upper:]' '[:lower:]')
 URL="https://github.com/end2endzone/BedrockHelper/releases/latest/download/bedrock_helper-$OSTYPE-$CPUARCH"
-curl -sS "$URL" -o "bedrock_helper"
+curl -sSL "$URL" -o "bedrock_helper"
 chmod +x "bedrock_helper"
 ```
 
@@ -86,7 +86,16 @@ On system where *[Go](https://go.dev/)* is installed, you can also do :
 CPUARCH=$(go env GOARCH)
 OSTYPE=$(go env GOHOSTOS)
 URL="https://github.com/end2endzone/BedrockHelper/releases/latest/download/bedrock_helper-$OSTYPE-$CPUARCH"
-curl -sS "$URL" -o "bedrock_helper"
+curl -sSL "$URL" -o "bedrock_helper"
+chmod +x "bedrock_helper"
+```
+
+On system where *[python](https://www.python.org/)* is installed, you can also do :
+```bash
+CPUARCH=$(case "$(uname -m)" in x86_64) echo "amd64";; aarch64) echo "arm64";; *) uname -m;; esac)
+OSTYPE=$(uname -s | tr '[:upper:]' '[:lower:]')
+URL="https://github.com/end2endzone/BedrockHelper/releases/latest/download/bedrock_helper-$OSTYPE-$CPUARCH"
+python3 -c "import urllib.request; urllib.request.urlretrieve('$URL', 'bedrock_helper')"
 chmod +x "bedrock_helper"
 ```
 
