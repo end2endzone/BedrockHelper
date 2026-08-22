@@ -228,6 +228,21 @@
             ]
         },
         {
+            "name": "bedrock_helper --install-all (verbose)",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/cmd/bedrock_helper",
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "debug: reset sandbox",
+            "args": [
+                "--install-all",
+                "--server-location",
+                "${workspaceFolder}/.debug-sandbox/testdata/servers/server_with_uninstalled_addons",
+                "--verbose"
+            ]
+        },
+        {
             "name": "bedrock_helper --uninstall-all",
             "type": "go",
             "request": "launch",
@@ -239,6 +254,21 @@
                 "--uninstall-all",
                 "--server-location",
                 "${workspaceFolder}/.debug-sandbox/testdata/servers/server_with_multiple_packs"
+            ]
+        },
+        {
+            "name": "bedrock_helper --uninstall-all (verbose)",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/cmd/bedrock_helper",
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "debug: reset sandbox",
+            "args": [
+                "--uninstall-all",
+                "--server-location",
+                "${workspaceFolder}/.debug-sandbox/testdata/servers/server_with_multiple_packs",
+                "--verbose"
             ]
         }
     ]
